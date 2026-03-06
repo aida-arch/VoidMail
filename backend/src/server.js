@@ -29,11 +29,32 @@ app.use('/api/helix', helixRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
+  const requiredEnvs = [
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'GOOGLE_PROJECT_ID',
+    'GOOGLE_REDIRECT_URI',
+    'GEMINI_API_KEY',
+    'PORT',
+    'NODE_ENV',
+    'IOS_REDIRECT_URI',
+  ];
+
+  const envStatus = {};
+  let allConfigured = true;
+
+  for (const key of requiredEnvs) {
+    const present = !!process.env[key];
+    envStatus[key] = present ? 'configured' : 'missing';
+    if (!present) allConfigured = false;
+  }
+
+  res.status(allConfigured ? 200 : 500).json({
+    status: allConfigured ? 'ok' : 'misconfigured',
     service: 'VoidMail Backend',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: envStatus,
   });
 });
 
