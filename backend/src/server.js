@@ -35,8 +35,6 @@ app.get('/health', (req, res) => {
     'GOOGLE_PROJECT_ID',
     'GOOGLE_REDIRECT_URI',
     'GEMINI_API_KEY',
-    'PORT',
-    'NODE_ENV',
     'IOS_REDIRECT_URI',
   ];
 

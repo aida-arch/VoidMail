@@ -50,12 +50,12 @@ router.get('/google/callback', async (req, res) => {
   const iosScheme = 'com.googleusercontent.apps.' + process.env.GOOGLE_CLIENT_ID.split('.')[0];
 
   if (oauthError) {
-    const errorRedirect = `${iosScheme}:/oauth2callback?error=${encodeURIComponent(oauthError)}`;
+    const errorRedirect = `${iosScheme}://oauth2callback?error=${encodeURIComponent(oauthError)}`;
     return res.redirect(errorRedirect);
   }
 
   if (!code) {
-    const errorRedirect = `${iosScheme}:/oauth2callback?error=missing_code`;
+    const errorRedirect = `${iosScheme}://oauth2callback?error=missing_code`;
     return res.redirect(errorRedirect);
   }
 
@@ -79,12 +79,12 @@ router.get('/google/callback', async (req, res) => {
       user_picture: userInfo.picture || ''
     });
 
-    const redirectURL = `${iosScheme}:/oauth2callback?${params.toString()}`;
+    const redirectURL = `${iosScheme}://oauth2callback?${params.toString()}`;
     console.log(`[Auth Callback] Redirecting to iOS app for ${userInfo.email}`);
     res.redirect(redirectURL);
   } catch (error) {
     console.error('[Auth Callback Error]', error.message);
-    const errorRedirect = `${iosScheme}:/oauth2callback?error=${encodeURIComponent(error.message)}`;
+    const errorRedirect = `${iosScheme}://oauth2callback?error=${encodeURIComponent(error.message)}`;
     res.redirect(errorRedirect);
   }
 });

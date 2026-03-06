@@ -57,21 +57,12 @@
     <string>VoidMail uses speech recognition to transcribe your voice into email text.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>VoidMail needs microphone access for voice-to-text dictation.</string>
-    <!-- Allow localhost HTTP for backend dev -->
     <key>NSAppTransportSecurity</key>
     <dict>
-        <key>NSAllowsLocalNetworking</key>
-        <true/>
-        <key>NSExceptionDomains</key>
-        <dict>
-            <key>localhost</key>
-            <dict>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-            </dict>
-        </dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
     </dict>
+    <key>BACKEND_BASE_URL</key>
+    <string>$(BACKEND_BASE_URL)</string>
 </dict>
 </plist>

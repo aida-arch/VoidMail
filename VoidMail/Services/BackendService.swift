@@ -8,9 +8,8 @@ import Foundation
 class BackendService: ObservableObject {
     static let shared = BackendService()
 
-    /// Base URL for the Node.js backend server.
-    /// Change this to your deployed URL in production.
-    let baseURL = "http://localhost:3000"
+    /// Base URL for the Node.js backend server, read from Info.plist (set via Config.xcconfig).
+    let baseURL: String = Bundle.main.object(forInfoDictionaryKey: "BACKEND_BASE_URL") as? String ?? "https://void-mail.vercel.app"
 
     /// Whether to route API calls through the backend (true) or directly to Google APIs (false).
     /// When the backend is running, set this to true for production-grade auth flow.
