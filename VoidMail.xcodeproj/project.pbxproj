@@ -1,0 +1,511 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01BAD18BD5888C228D802B92 /* DeepgramService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6FF256BE8F2046593F294B /* DeepgramService.swift */; };
+		0FB83873C3B51E47AE106C21 /* GoogleCalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF0C2D11ECE18EBF27667C2 /* GoogleCalendarService.swift */; };
+		16F5889E4272C756BDA1E0A4 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D695519A13509E500AD1F8 /* SearchView.swift */; };
+		2D87A327CA8D782EDBE20899 /* GoogleAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57660795272D5C7981D58983 /* GoogleAuthService.swift */; };
+		2FB7296907CD8DD7347705FD /* InAppNotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD091CF94FC54D0158CCADE5 /* InAppNotificationBanner.swift */; };
+		359649C4F22F29266E46584F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132AD40D873396DD54F67260 /* OnboardingView.swift */; };
+		37D0F8F5331BAE0A25429E30 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16FB582D6753142F7E9E0954 /* Typography.swift */; };
+		440F29D30A1FB44A3946ABA6 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34BE800D0BD7DBA6AB8CC40 /* GeminiService.swift */; };
+		4759BDCD210AA2FD4E103FA3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BACDA382BFBA253496D31D84 /* SettingsView.swift */; };
+		49CAD4E99ACB2F072438471D /* EmailRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53CE0C8EF544D1D801A17FDC /* EmailRowView.swift */; };
+		56DE9457B9CE0ADE16B61DC6 /* ComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0051D8C5911EE8C3C8F2595A /* ComposeView.swift */; };
+		6BF972425A8888F91616F948 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A228514C65F9BFD06D9299CB /* ContentView.swift */; };
+		7318F9ACA9C780FD203FFBF2 /* HelixO1View.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD1E461D2F891E624289F03 /* HelixO1View.swift */; };
+		86BF3A1387B1391B7B92A268 /* VoidMailApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220D2D5D6F5DD37485805185 /* VoidMailApp.swift */; };
+		8F2597D9A468CDAF52333DA7 /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B106DDE56CB80F5DA2B290 /* InboxView.swift */; };
+		90065FEBE8811F43C423FA17 /* email_sent.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 016C091F2843B25B6955B597 /* email_sent.mp3 */; };
+		91AD98C5ECA383014B6F2DE3 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82BF01F917D83AC4DA2C862F /* Components.swift */; };
+		94A7D2F6C305AA5506BCD149 /* Email.swift in Sources */ = {isa = PBXBuildFile; fileRef = A949526AB7C17B25C72F4729 /* Email.swift */; };
+		AB747AE97E383C134C931ADB /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED40AD236BF26DA50AE2AFA /* Account.swift */; };
+		ABCF1954E7D36765EAD4EF2A /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F93B49D5490F0C9F680431 /* CalendarEvent.swift */; };
+		B1A2048B57E90C9A83723B0A /* GmailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7D006C3AC93563391CA166 /* GmailService.swift */; };
+		D8E07E9041B2D9025C619785 /* new_mail.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A2987FF7A3FBDE946A24AFD6 /* new_mail.mp3 */; };
+		DD42FD4922519E13FED88FDE /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087E27CA595D8AA53512C3AD /* BackendService.swift */; };
+		E18BA1536961892FD52EE21D /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CB2CED79DFF5063D8EB96C /* NotificationService.swift */; };
+		E70AFC21E27FA46EE7EBEE42 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F1FAFFD250FA481F5599E7B /* CalendarView.swift */; };
+		EB5C444A27F5CEACDD4A0C3E /* EmailDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06EF41FD61DB1F97D31DE893 /* EmailDetailView.swift */; };
+		F8901C2600EF8A3CE25229EE /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD39F6DC848DE0BF49A2BEFE /* Colors.swift */; };
+		FF1DEEAB660AF9644DD372A9 /* SoundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6845FCB378732A04C42FFF /* SoundService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0051D8C5911EE8C3C8F2595A /* ComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeView.swift; sourceTree = "<group>"; };
+		016C091F2843B25B6955B597 /* email_sent.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = email_sent.mp3; sourceTree = "<group>"; };
+		06EF41FD61DB1F97D31DE893 /* EmailDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailDetailView.swift; sourceTree = "<group>"; };
+		087E27CA595D8AA53512C3AD /* BackendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendService.swift; sourceTree = "<group>"; };
+		0AD1E461D2F891E624289F03 /* HelixO1View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelixO1View.swift; sourceTree = "<group>"; };
+		0B7D006C3AC93563391CA166 /* GmailService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GmailService.swift; sourceTree = "<group>"; };
+		132AD40D873396DD54F67260 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		16FB582D6753142F7E9E0954 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		1E6FF256BE8F2046593F294B /* DeepgramService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepgramService.swift; sourceTree = "<group>"; };
+		220D2D5D6F5DD37485805185 /* VoidMailApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoidMailApp.swift; sourceTree = "<group>"; };
+		2E6845FCB378732A04C42FFF /* SoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundService.swift; sourceTree = "<group>"; };
+		36CB2CED79DFF5063D8EB96C /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		3F1FAFFD250FA481F5599E7B /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		53CE0C8EF544D1D801A17FDC /* EmailRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailRowView.swift; sourceTree = "<group>"; };
+		54B106DDE56CB80F5DA2B290 /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
+		57660795272D5C7981D58983 /* GoogleAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleAuthService.swift; sourceTree = "<group>"; };
+		5BF0C2D11ECE18EBF27667C2 /* GoogleCalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
+		5ED40AD236BF26DA50AE2AFA /* Account.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Account.swift; sourceTree = "<group>"; };
+		6736BA6832D1831AA2DF9DB3 /* VoidMail.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VoidMail.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		82BF01F917D83AC4DA2C862F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		A228514C65F9BFD06D9299CB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A2987FF7A3FBDE946A24AFD6 /* new_mail.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = new_mail.mp3; sourceTree = "<group>"; };
+		A949526AB7C17B25C72F4729 /* Email.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Email.swift; sourceTree = "<group>"; };
+		BACDA382BFBA253496D31D84 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BD39F6DC848DE0BF49A2BEFE /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		C8D695519A13509E500AD1F8 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		C9F93B49D5490F0C9F680431 /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
+		CD091CF94FC54D0158CCADE5 /* InAppNotificationBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppNotificationBanner.swift; sourceTree = "<group>"; };
+		F34BE800D0BD7DBA6AB8CC40 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2FBCCCDEB0EA581EF9947EFD /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				BACDA382BFBA253496D31D84 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		3D6B96FC223F1EE79597979D /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				0AD1E461D2F891E624289F03 /* HelixO1View.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		5136AEEAABF83334B4178755 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				3D6B96FC223F1EE79597979D /* AI */,
+				69B9335CCBA19C92C43A288F /* Calendar */,
+				D0E8203E0F729205A5D22F37 /* Compose */,
+				78857B242BD446BFFC61ABDA /* Inbox */,
+				BE21814220150DE9966A9960 /* Onboarding */,
+				D183C4A50D328E59FBC4D0A4 /* Search */,
+				2FBCCCDEB0EA581EF9947EFD /* Settings */,
+				B5BEF87C428F93B01E89B946 /* Shared */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		5BB17B308F2FDA4F7CF03C2C /* VoidMail */ = {
+			isa = PBXGroup;
+			children = (
+				A228514C65F9BFD06D9299CB /* ContentView.swift */,
+				220D2D5D6F5DD37485805185 /* VoidMailApp.swift */,
+				C60D9FC2E63C7B7EE17B7B8B /* DesignSystem */,
+				9B0798F806B42E318385A2E2 /* Models */,
+				DC13D66BDBC010209A747E46 /* Resources */,
+				C86B419DB220296DC9F8AB63 /* Services */,
+				5136AEEAABF83334B4178755 /* Views */,
+			);
+			path = VoidMail;
+			sourceTree = "<group>";
+		};
+		69B9335CCBA19C92C43A288F /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				3F1FAFFD250FA481F5599E7B /* CalendarView.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		78857B242BD446BFFC61ABDA /* Inbox */ = {
+			isa = PBXGroup;
+			children = (
+				06EF41FD61DB1F97D31DE893 /* EmailDetailView.swift */,
+				53CE0C8EF544D1D801A17FDC /* EmailRowView.swift */,
+				54B106DDE56CB80F5DA2B290 /* InboxView.swift */,
+			);
+			path = Inbox;
+			sourceTree = "<group>";
+		};
+		9B0798F806B42E318385A2E2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				5ED40AD236BF26DA50AE2AFA /* Account.swift */,
+				C9F93B49D5490F0C9F680431 /* CalendarEvent.swift */,
+				A949526AB7C17B25C72F4729 /* Email.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		9BB2318BFBAFFF86E7B5F436 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6736BA6832D1831AA2DF9DB3 /* VoidMail.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B5BEF87C428F93B01E89B946 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				CD091CF94FC54D0158CCADE5 /* InAppNotificationBanner.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		BE21814220150DE9966A9960 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				132AD40D873396DD54F67260 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		C60D9FC2E63C7B7EE17B7B8B /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				BD39F6DC848DE0BF49A2BEFE /* Colors.swift */,
+				82BF01F917D83AC4DA2C862F /* Components.swift */,
+				16FB582D6753142F7E9E0954 /* Typography.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		C86B419DB220296DC9F8AB63 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				087E27CA595D8AA53512C3AD /* BackendService.swift */,
+				1E6FF256BE8F2046593F294B /* DeepgramService.swift */,
+				F34BE800D0BD7DBA6AB8CC40 /* GeminiService.swift */,
+				0B7D006C3AC93563391CA166 /* GmailService.swift */,
+				57660795272D5C7981D58983 /* GoogleAuthService.swift */,
+				5BF0C2D11ECE18EBF27667C2 /* GoogleCalendarService.swift */,
+				36CB2CED79DFF5063D8EB96C /* NotificationService.swift */,
+				2E6845FCB378732A04C42FFF /* SoundService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D0E8203E0F729205A5D22F37 /* Compose */ = {
+			isa = PBXGroup;
+			children = (
+				0051D8C5911EE8C3C8F2595A /* ComposeView.swift */,
+			);
+			path = Compose;
+			sourceTree = "<group>";
+		};
+		D183C4A50D328E59FBC4D0A4 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				C8D695519A13509E500AD1F8 /* SearchView.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		D546160A168157F67A38258A = {
+			isa = PBXGroup;
+			children = (
+				5BB17B308F2FDA4F7CF03C2C /* VoidMail */,
+				9BB2318BFBAFFF86E7B5F436 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DC13D66BDBC010209A747E46 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				016C091F2843B25B6955B597 /* email_sent.mp3 */,
+				A2987FF7A3FBDE946A24AFD6 /* new_mail.mp3 */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D729BEC86B136CE84D1B7EF5 /* VoidMail */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E22D763A38EE9BFF47BC3A4 /* Build configuration list for PBXNativeTarget "VoidMail" */;
+			buildPhases = (
+				3F8792E642932D57E3528608 /* Sources */,
+				ED4188343867769D4F085EE5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoidMail;
+			packageProductDependencies = (
+			);
+			productName = VoidMail;
+			productReference = 6736BA6832D1831AA2DF9DB3 /* VoidMail.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EC964A330E0400CB4B46F096 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					D729BEC86B136CE84D1B7EF5 = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = A5CEDECA48D01999FCC5F06D /* Build configuration list for PBXProject "VoidMail" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D546160A168157F67A38258A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D729BEC86B136CE84D1B7EF5 /* VoidMail */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		ED4188343867769D4F085EE5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				90065FEBE8811F43C423FA17 /* email_sent.mp3 in Resources */,
+				D8E07E9041B2D9025C619785 /* new_mail.mp3 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3F8792E642932D57E3528608 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB747AE97E383C134C931ADB /* Account.swift in Sources */,
+				DD42FD4922519E13FED88FDE /* BackendService.swift in Sources */,
+				ABCF1954E7D36765EAD4EF2A /* CalendarEvent.swift in Sources */,
+				E70AFC21E27FA46EE7EBEE42 /* CalendarView.swift in Sources */,
+				F8901C2600EF8A3CE25229EE /* Colors.swift in Sources */,
+				91AD98C5ECA383014B6F2DE3 /* Components.swift in Sources */,
+				56DE9457B9CE0ADE16B61DC6 /* ComposeView.swift in Sources */,
+				6BF972425A8888F91616F948 /* ContentView.swift in Sources */,
+				01BAD18BD5888C228D802B92 /* DeepgramService.swift in Sources */,
+				94A7D2F6C305AA5506BCD149 /* Email.swift in Sources */,
+				EB5C444A27F5CEACDD4A0C3E /* EmailDetailView.swift in Sources */,
+				49CAD4E99ACB2F072438471D /* EmailRowView.swift in Sources */,
+				440F29D30A1FB44A3946ABA6 /* GeminiService.swift in Sources */,
+				B1A2048B57E90C9A83723B0A /* GmailService.swift in Sources */,
+				2D87A327CA8D782EDBE20899 /* GoogleAuthService.swift in Sources */,
+				0FB83873C3B51E47AE106C21 /* GoogleCalendarService.swift in Sources */,
+				7318F9ACA9C780FD203FFBF2 /* HelixO1View.swift in Sources */,
+				2FB7296907CD8DD7347705FD /* InAppNotificationBanner.swift in Sources */,
+				8F2597D9A468CDAF52333DA7 /* InboxView.swift in Sources */,
+				E18BA1536961892FD52EE21D /* NotificationService.swift in Sources */,
+				359649C4F22F29266E46584F /* OnboardingView.swift in Sources */,
+				16F5889E4272C756BDA1E0A4 /* SearchView.swift in Sources */,
+				4759BDCD210AA2FD4E103FA3 /* SettingsView.swift in Sources */,
+				FF1DEEAB660AF9644DD372A9 /* SoundService.swift in Sources */,
+				37D0F8F5331BAE0A25429E30 /* Typography.swift in Sources */,
+				86BF3A1387B1391B7B92A268 /* VoidMailApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		69F6808E5FE61BF0E30A4A48 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		7DBA0BDD5D139FE1712706DD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		80E3AF097A35D862097552DA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = VoidMail/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.voidmail.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		81BB720F76490E1B240CC1DD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = VoidMail/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.voidmail.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6E22D763A38EE9BFF47BC3A4 /* Build configuration list for PBXNativeTarget "VoidMail" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80E3AF097A35D862097552DA /* Debug */,
+				81BB720F76490E1B240CC1DD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A5CEDECA48D01999FCC5F06D /* Build configuration list for PBXProject "VoidMail" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7DBA0BDD5D139FE1712706DD /* Debug */,
+				69F6808E5FE61BF0E30A4A48 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = EC964A330E0400CB4B46F096 /* Project object */;
+}
