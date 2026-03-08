@@ -40,7 +40,7 @@ class SoundService {
     /// Plays an mp3 file from the app bundle using AVAudioPlayer.
     private func playBundleSound(named name: String, ext: String) {
         guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
-            print("[SoundService] Sound file \(name).\(ext) not found in bundle")
+            debugLog("[SoundService] Sound file \(name).\(ext) not found in bundle")
             return
         }
         do {
@@ -49,7 +49,7 @@ class SoundService {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayer?.play()
         } catch {
-            print("[SoundService] Failed to play \(name).\(ext): \(error.localizedDescription)")
+            debugLog("[SoundService] Failed to play \(name).\(ext): \(error.localizedDescription)")
         }
     }
 

@@ -494,7 +494,7 @@ struct ComposeView: View {
                 }
             }
         case .failure(let error):
-            print("[ComposeView] File picker error: \(error.localizedDescription)")
+            debugLog("[ComposeView] File picker error: \(error.localizedDescription)")
         }
     }
 
@@ -634,7 +634,7 @@ struct ComposeView: View {
             try audioEngine.start()
             isRecording = true
         } catch {
-            print("[ComposeView] Audio engine failed: \(error)")
+            debugLog("[ComposeView] Audio engine failed: \(error)")
             return
         }
 

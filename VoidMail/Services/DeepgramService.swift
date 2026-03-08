@@ -8,7 +8,12 @@ import AVFoundation
 class DeepgramService: ObservableObject {
     static let shared = DeepgramService()
 
-    private let apiKey = "DEEPGRAM_API_KEY_PLACEHOLDER"
+    private let apiKey: String = {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "DEEPGRAM_API_KEY") as? String, !key.isEmpty else {
+            return ""
+        }
+        return key
+    }()
     private let baseURL = "https://api.deepgram.com/v1/speak"
 
     @Published var isGenerating = false
@@ -24,6 +29,7 @@ class DeepgramService: ObservableObject {
     // MARK: - Generate Audio from Email
 
     /// Generates TTS audio for an email body. Returns the local file URL.
+    /// Splits long text into chunks to avoid Deepgram's payload size limit.
     func generateAudio(emailId: String, text: String, voice: String = "aura-asteria-en") async -> URL? {
         // Return cached audio if already generated
         if let cached = cachedAudioURLs[emailId] {
@@ -33,66 +39,119 @@ class DeepgramService: ObservableObject {
         isGenerating = true
         error = nil
 
-        guard apiKey != "DEEPGRAM_API_KEY_PLACEHOLDER" else {
+        guard !apiKey.isEmpty else {
             error = "Deepgram API key not configured"
             isGenerating = false
             return nil
         }
 
         do {
-            let urlString = "\(baseURL)?model=\(voice)"
-            guard let url = URL(string: urlString) else {
-                error = "Invalid API URL"
-                isGenerating = false
-                return nil
-            }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.addValue("Token \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.timeoutInterval = 60
-
-            // Trim text to reasonable length for TTS
+            // Trim to reasonable max and split into chunks
             let trimmedText = String(text.prefix(5000))
+            let chunks = splitIntoChunks(trimmedText, maxLength: 1500)
 
-            let body: [String: Any] = [
-                "text": trimmedText
-            ]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            var allAudioData = Data()
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            for chunk in chunks {
+                guard let chunkData = try await fetchTTSAudio(text: chunk, voice: voice) else {
+                    continue
+                }
+                allAudioData.append(chunkData)
+            }
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                error = "Network error"
+            guard !allAudioData.isEmpty else {
+                error = "Failed to generate audio"
                 isGenerating = false
                 return nil
             }
 
-            guard httpResponse.statusCode == 200 else {
-                let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
-                print("[DeepgramService] API error \(httpResponse.statusCode): \(errorBody)")
-                error = "TTS failed (status \(httpResponse.statusCode))"
-                isGenerating = false
-                return nil
-            }
-
-            // Save audio data to temp file
+            // Save combined audio to temp file
             let tempDir = FileManager.default.temporaryDirectory
             let fileURL = tempDir.appendingPathComponent("voidmail_tts_\(emailId).mp3")
-
-            try data.write(to: fileURL)
+            try allAudioData.write(to: fileURL)
             cachedAudioURLs[emailId] = fileURL
 
             isGenerating = false
             return fileURL
 
         } catch {
-            print("[DeepgramService] generateAudio error: \(error.localizedDescription)")
+            debugLog("[DeepgramService] generateAudio error: \(error.localizedDescription)")
             self.error = "Failed to generate audio"
             isGenerating = false
             return nil
         }
+    }
+
+    /// Fetch TTS audio for a single text chunk from Deepgram
+    private func fetchTTSAudio(text: String, voice: String) async throws -> Data? {
+        let urlString = "\(baseURL)?model=\(voice)&encoding=mp3"
+        guard let url = URL(string: urlString) else { return nil }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Token \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        let body: [String: Any] = ["text": text]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            debugLog("[DeepgramService] Chunk TTS error \(code)")
+            return nil
+        }
+
+        return data
+    }
+
+    /// Split text into chunks at sentence boundaries, respecting maxLength
+    private func splitIntoChunks(_ text: String, maxLength: Int) -> [String] {
+        guard text.count > maxLength else { return [text] }
+
+        var chunks: [String] = []
+        var remaining = text
+
+        while !remaining.isEmpty {
+            if remaining.count <= maxLength {
+                chunks.append(remaining)
+                break
+            }
+
+            // Find the last sentence-ending punctuation within maxLength
+            let searchRange = remaining.prefix(maxLength)
+            var splitIndex = searchRange.startIndex
+
+            // Look for sentence boundaries: . ! ? followed by space or end
+            for char in [". ", "! ", "? ", ".\n", "!\n", "?\n"] {
+                if let range = searchRange.range(of: char, options: .backwards) {
+                    let candidate = range.upperBound
+                    if candidate > splitIndex {
+                        splitIndex = candidate
+                    }
+                }
+            }
+
+            // If no sentence boundary found, split at last space
+            if splitIndex == searchRange.startIndex {
+                if let spaceRange = searchRange.range(of: " ", options: .backwards) {
+                    splitIndex = spaceRange.upperBound
+                } else {
+                    // No space found — hard split
+                    splitIndex = remaining.index(remaining.startIndex, offsetBy: maxLength)
+                }
+            }
+
+            let chunk = String(remaining[remaining.startIndex..<splitIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !chunk.isEmpty {
+                chunks.append(chunk)
+            }
+            remaining = String(remaining[splitIndex...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        return chunks
     }
 
     // MARK: - Play Audio
@@ -112,7 +171,7 @@ class DeepgramService: ObservableObject {
             // Start progress tracking
             startProgressTracking()
         } catch {
-            print("[DeepgramService] play error: \(error.localizedDescription)")
+            debugLog("[DeepgramService] play error: \(error.localizedDescription)")
             self.error = "Failed to play audio"
         }
     }

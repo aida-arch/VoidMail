@@ -46,8 +46,10 @@ router.get('/google', (req, res) => {
 router.get('/google/callback', async (req, res) => {
   const { code, error: oauthError } = req.query;
 
-  // iOS custom URL scheme for redirect
-  const iosScheme = 'com.googleusercontent.apps.' + process.env.GOOGLE_CLIENT_ID.split('.')[0];
+  // iOS custom URL scheme for redirect — uses the iOS client ID, not the web client ID
+  const iosScheme = process.env.IOS_REDIRECT_URI
+    ? process.env.IOS_REDIRECT_URI.split('://')[0]
+    : 'com.googleusercontent.apps.' + process.env.GOOGLE_CLIENT_ID.split('.')[0];
 
   if (oauthError) {
     const errorRedirect = `${iosScheme}://oauth2callback?error=${encodeURIComponent(oauthError)}`;

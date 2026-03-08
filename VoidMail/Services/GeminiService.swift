@@ -9,7 +9,8 @@ class GeminiService: ObservableObject {
 
     private let apiKey: String = {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String, !key.isEmpty else {
-            fatalError("GEMINI_API_KEY not set in Info.plist — add it via Config.xcconfig")
+            // Return empty string — features will gracefully fail instead of crashing
+            return ""
         }
         return key
     }()
@@ -20,6 +21,7 @@ class GeminiService: ObservableObject {
     // MARK: - Core API Call
 
     private func generateContent(prompt: String, maxTokens: Int = 500, temperature: Double = 0.7) async throws -> String {
+        guard !apiKey.isEmpty else { throw GeminiError.apiError(0, "API key not configured") }
         guard let url = URL(string: "\(baseURL)?key=\(apiKey)") else {
             throw GeminiError.invalidURL
         }
@@ -199,7 +201,12 @@ class GeminiService: ObservableObject {
 
         Translation:
         """
-        return try? await generateContent(prompt: prompt, maxTokens: 1000, temperature: 0.3)
+        do {
+            return try await generateContent(prompt: prompt, maxTokens: 2000, temperature: 0.3)
+        } catch {
+            debugLog("[GeminiService] translateEmail error: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     // MARK: - Generate Email Subject

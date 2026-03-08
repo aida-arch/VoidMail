@@ -150,7 +150,7 @@ class GoogleCalendarService: ObservableObject {
             let calResponse = try JSONDecoder().decode(CalendarEventsResponse.self, from: data)
             events = (calResponse.items ?? []).compactMap { parseCalendarEvent($0) }
         } catch {
-            print("[GoogleCalendarService] fetchEvents error: \(error.localizedDescription)")
+            debugLog("[GoogleCalendarService] fetchEvents error: \(error.localizedDescription)")
         }
 
         isLoading = false
@@ -189,7 +189,7 @@ class GoogleCalendarService: ObservableObject {
             let calResponse = try JSONDecoder().decode(CalendarEventsResponse.self, from: data)
             monthEvents = (calResponse.items ?? []).compactMap { parseCalendarEvent($0) }
         } catch {
-            print("[GoogleCalendarService] fetchMonthEvents error: \(error.localizedDescription)")
+            debugLog("[GoogleCalendarService] fetchMonthEvents error: \(error.localizedDescription)")
         }
     }
 
@@ -258,11 +258,11 @@ class GoogleCalendarService: ObservableObject {
                 }
                 return true
             } else {
-                print("[GoogleCalendarService] createEvent failed with status \(statusCode)")
+                debugLog("[GoogleCalendarService] createEvent failed with status \(statusCode)")
                 return false
             }
         } catch {
-            print("[GoogleCalendarService] createEvent error: \(error.localizedDescription)")
+            debugLog("[GoogleCalendarService] createEvent error: \(error.localizedDescription)")
             return false
         }
     }

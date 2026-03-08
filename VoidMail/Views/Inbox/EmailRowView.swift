@@ -11,9 +11,9 @@ struct EmailRowView: View {
             ZStack(alignment: .topLeading) {
                 InitialsAvatar(email.from.displayName, size: 44)
 
-                // Account color indicator bar
+                // Account color indicator bar (yellow for unread, account color for read)
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(accountColor)
+                    .fill(email.isRead ? accountColor : Color.accentYellow)
                     .frame(width: 3, height: 44)
                     .offset(x: -8)
             }
@@ -80,12 +80,6 @@ struct EmailRowView: View {
                 .padding(.top, 2)
             }
 
-            // Unread indicator bar on trailing edge
-            if !email.isRead {
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(Color.accentSkyBlue)
-                    .frame(width: 3, height: 30)
-            }
         }
         .padding(20)
         .background(Color.bgEmailRow)

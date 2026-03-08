@@ -115,8 +115,15 @@ class GmailService: ObservableObject {
         var allFetched: [Email] = []
         var newEmails: [(from: String, subject: String, snippet: String, id: String)] = []
 
+        // Get fresh tokens — refresh if needed
+        var freshTokens: [(email: String, token: String)] = []
+        for (email, token) in accountTokens {
+            // Try the stored token first; if it's stale, refreshAccessToken will be called in the fetch
+            freshTokens.append((email: email, token: token))
+        }
+
         await withTaskGroup(of: [Email].self) { group in
-            for (email, token) in accountTokens {
+            for (email, token) in freshTokens {
                 group.addTask { [self] in
                     return await self.fetchEmailsForSingleAccount(token: token, accountEmail: email, query: query)
                 }
@@ -129,6 +136,13 @@ class GmailService: ObservableObject {
 
         // Sort all emails by date (newest first)
         allFetched.sort { $0.date > $1.date }
+
+        // Don't wipe existing emails if fetch returned nothing (likely a token/network error)
+        if allFetched.isEmpty && !emails.isEmpty {
+            debugLog("[GmailService] Fetch returned 0 emails — keeping existing \(emails.count) emails")
+            isLoading = false
+            return
+        }
 
         // Detect new emails for notifications
         if !knownEmailIds.isEmpty {
@@ -210,23 +224,48 @@ class GmailService: ObservableObject {
 
             return await fetchMessageDetailsForAccount(messageRefs, token: token, accountEmail: accountEmail)
         } catch {
-            print("[GmailService] fetchEmails error for \(accountEmail): \(error.localizedDescription)")
+            debugLog("[GmailService] fetchEmails error for \(accountEmail): \(error.localizedDescription)")
             return []
         }
     }
 
-    /// Fetch message details for a list of refs, tagging with account email
+    /// Fetch message details concurrently with bounded parallelism
     private nonisolated func fetchMessageDetailsForAccount(_ refs: [GmailListResponse.MessageRef], token: String, accountEmail: String) async -> [Email] {
-        var fetchedEmails: [Email] = []
+        // Fetch all message details concurrently (up to 10 at a time via TaskGroup)
+        // This turns 30 sequential requests into ~3 batches of 10 concurrent requests
+        let maxConcurrency = 10
 
-        for ref in refs {
-            if var email = try? await fetchMessageDetail(id: ref.id, threadId: ref.threadId, token: token) {
-                email.accountEmail = accountEmail
-                fetchedEmails.append(email)
+        var allEmails: [Email] = []
+
+        // Process in chunks to avoid overwhelming the network
+        for chunkStart in stride(from: 0, to: refs.count, by: maxConcurrency) {
+            let chunkEnd = min(chunkStart + maxConcurrency, refs.count)
+            let chunk = Array(refs[chunkStart..<chunkEnd])
+
+            let chunkResults: [Email] = await withTaskGroup(of: Email?.self, returning: [Email].self) { group in
+                for ref in chunk {
+                    group.addTask {
+                        guard var email = try? await self.fetchMessageDetail(id: ref.id, threadId: ref.threadId, token: token, format: "metadata", accountEmail: accountEmail) else {
+                            return nil
+                        }
+                        email.accountEmail = accountEmail
+                        return email
+                    }
+                }
+
+                var results: [Email] = []
+                for await email in group {
+                    if let email = email {
+                        results.append(email)
+                    }
+                }
+                return results
             }
+
+            allEmails.append(contentsOf: chunkResults)
         }
 
-        return fetchedEmails
+        return allEmails
     }
 
     /// Legacy single-account fetch (fallback)
@@ -258,16 +297,40 @@ class GmailService: ObservableObject {
 
     private func checkAIPriority() async {
         let gemini = GeminiService.shared
-        for i in emails.indices {
-            let email = emails[i]
-            if !email.isRead && !email.isAIPriority {
-                let isPriority = await gemini.isEmailPriority(
-                    subject: email.subject,
-                    from: email.from.displayName,
-                    snippet: email.snippet
-                )
-                if isPriority {
-                    emails[i].isAIPriority = true
+        // Collect unread, non-priority emails
+        let candidates = emails.enumerated().compactMap { (i, email) -> (Int, Email)? in
+            (!email.isRead && !email.isAIPriority) ? (i, email) : nil
+        }
+        guard !candidates.isEmpty else { return }
+
+        // Check up to 5 concurrently to avoid hammering Gemini API
+        let maxConcurrency = 5
+        for chunkStart in stride(from: 0, to: candidates.count, by: maxConcurrency) {
+            let chunkEnd = min(chunkStart + maxConcurrency, candidates.count)
+            let chunk = Array(candidates[chunkStart..<chunkEnd])
+
+            let results: [(Int, Bool)] = await withTaskGroup(of: (Int, Bool).self, returning: [(Int, Bool)].self) { group in
+                for (index, email) in chunk {
+                    group.addTask {
+                        let isPriority = await gemini.isEmailPriority(
+                            subject: email.subject,
+                            from: email.from.displayName,
+                            snippet: email.snippet
+                        )
+                        return (index, isPriority)
+                    }
+                }
+                var collected: [(Int, Bool)] = []
+                for await result in group {
+                    collected.append(result)
+                }
+                return collected
+            }
+
+            // Apply results on main actor
+            for (index, isPriority) in results {
+                if isPriority && index < emails.count {
+                    emails[index].isAIPriority = true
                 }
             }
         }
@@ -275,17 +338,56 @@ class GmailService: ObservableObject {
 
     // MARK: - Fetch Single Message Detail
 
-    private nonisolated func fetchMessageDetail(id: String, threadId: String, token: String) async throws -> Email? {
+    /// Fetch message detail — uses `metadata` format for list view (fast), `full` for detail view
+    private nonisolated func fetchMessageDetail(id: String, threadId: String, token: String, format: String = "metadata", accountEmail: String? = nil) async throws -> Email? {
         let baseURL = "https://gmail.googleapis.com/gmail/v1/users/me"
-        guard let url = URL(string: "\(baseURL)/messages/\(id)?format=full") else { return nil }
+        var urlString = "\(baseURL)/messages/\(id)?format=\(format)"
+        // For metadata format, request only the headers we need
+        if format == "metadata" {
+            urlString += "&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Date"
+        }
+        guard let url = URL(string: urlString) else { return nil }
 
         var request = URLRequest(url: url)
         request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        // Handle 401 — token expired, try refresh
+        if let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 401, let acctEmail = accountEmail {
+            let refreshedToken: String? = await {
+                await GoogleAuthService.shared.refreshAccessToken(for: acctEmail)
+            }()
+            if let newToken = refreshedToken {
+                request.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                let (retryData, _) = try await URLSession.shared.data(for: request)
+                let msg = try JSONDecoder().decode(GmailMessageResponse.self, from: retryData)
+                return parseGmailMessage(msg)
+            }
+            return nil
+        }
+
         let msg = try JSONDecoder().decode(GmailMessageResponse.self, from: data)
 
         return parseGmailMessage(msg)
+    }
+
+    /// Fetch full email body on demand (called from detail view)
+    func fetchFullEmail(emailId: String, accountEmail: String? = nil) async -> Email? {
+        guard let token = await auth.getAccessToken(for: accountEmail) else { return nil }
+        do {
+            guard var email = try await fetchMessageDetail(id: emailId, threadId: "", token: token, format: "full") else { return nil }
+            email.accountEmail = accountEmail
+            // Update the cached email in our list with the full body
+            if let idx = emails.firstIndex(where: { $0.id == emailId }) {
+                emails[idx].body = email.body
+                emails[idx].attachments = email.attachments
+            }
+            return email
+        } catch {
+            debugLog("[GmailService] fetchFullEmail error: \(error.localizedDescription)")
+            return nil
+        }
     }
 
     // MARK: - Send Email
@@ -322,7 +424,7 @@ class GmailService: ObservableObject {
             }
             return success
         } catch {
-            print("[GmailService] sendEmail error: \(error.localizedDescription)")
+            debugLog("[GmailService] sendEmail error: \(error.localizedDescription)")
             return false
         }
     }
@@ -346,7 +448,7 @@ class GmailService: ObservableObject {
 
             return base64URLDecodeData(base64Data)
         } catch {
-            print("[GmailService] downloadAttachment error: \(error.localizedDescription)")
+            debugLog("[GmailService] downloadAttachment error: \(error.localizedDescription)")
             return nil
         }
     }
@@ -415,7 +517,7 @@ class GmailService: ObservableObject {
             }
             return success
         } catch {
-            print("[GmailService] sendEmailWithAttachments error: \(error.localizedDescription)")
+            debugLog("[GmailService] sendEmailWithAttachments error: \(error.localizedDescription)")
             return false
         }
     }
@@ -453,7 +555,7 @@ class GmailService: ObservableObject {
             let _ = try await URLSession.shared.data(for: request)
             emails.removeAll { $0.id == emailId }
         } catch {
-            print("[GmailService] archiveEmail error: \(error.localizedDescription)")
+            debugLog("[GmailService] archiveEmail error: \(error.localizedDescription)")
         }
     }
 
@@ -473,7 +575,7 @@ class GmailService: ObservableObject {
             let _ = try await URLSession.shared.data(for: request)
             emails.removeAll { $0.id == emailId }
         } catch {
-            print("[GmailService] deleteEmail error: \(error.localizedDescription)")
+            debugLog("[GmailService] deleteEmail error: \(error.localizedDescription)")
         }
     }
 
@@ -507,7 +609,7 @@ class GmailService: ObservableObject {
 
             let _ = try await URLSession.shared.data(for: request)
         } catch {
-            print("[GmailService] toggleRead error: \(error.localizedDescription)")
+            debugLog("[GmailService] toggleRead error: \(error.localizedDescription)")
         }
     }
 
@@ -541,7 +643,7 @@ class GmailService: ObservableObject {
 
             let _ = try await URLSession.shared.data(for: request)
         } catch {
-            print("[GmailService] toggleStar error: \(error.localizedDescription)")
+            debugLog("[GmailService] toggleStar error: \(error.localizedDescription)")
         }
     }
 
@@ -606,7 +708,7 @@ class GmailService: ObservableObject {
             to: toContacts,
             cc: ccContacts,
             subject: subject,
-            snippet: msg.snippet ?? "",
+            snippet: decodeHTMLEntities(msg.snippet ?? ""),
             body: bodyText,
             date: emailDate,
             isRead: isRead,
@@ -734,7 +836,20 @@ class GmailService: ObservableObject {
     }
 
     private nonisolated func stripHTMLTags(_ html: String) -> String {
-        // Simple regex-based stripping for nonisolated context
-        return html.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        // Strip HTML tags then decode common HTML entities
+        return decodeHTMLEntities(
+            html.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        )
+    }
+
+    private nonisolated func decodeHTMLEntities(_ text: String) -> String {
+        return text
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&#x27;", with: "'")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&nbsp;", with: " ")
     }
 }

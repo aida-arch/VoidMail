@@ -11,14 +11,14 @@ struct Email: Identifiable, Hashable {
     let cc: [Contact]
     let subject: String
     let snippet: String
-    let body: String
+    var body: String
     let date: Date
     var isRead: Bool
     var isStarred: Bool
     var isSnoozed: Bool
     var category: EmailCategory
     var labels: [String]
-    let attachments: [Attachment]
+    var attachments: [Attachment]
     var aiSummary: String?
     var isAIPriority: Bool
     var accountEmail: String?  // Which account this email belongs to

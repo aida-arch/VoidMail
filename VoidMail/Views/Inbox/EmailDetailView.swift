@@ -6,6 +6,7 @@ struct EmailDetailView: View {
     let email: Email
     @Environment(\.dismiss) private var dismiss
     @StateObject private var tts = DeepgramService.shared
+    @StateObject private var gmailService = GmailService.shared
     @State private var showReplySheet = false
     @State private var replyType: ReplyType = .reply
     @State private var aiSummary: String?
@@ -18,6 +19,19 @@ struct EmailDetailView: View {
     @State private var showTranslateMenu = false
     @State private var translateError: String?
     @State private var audioURL: URL?
+    @State private var fullBody: String?
+    @State private var isLoadingBody = false
+    @State private var fullAttachments: [Attachment]?
+
+    /// The best available body text (full if loaded, otherwise snippet)
+    private var displayBody: String {
+        fullBody ?? (email.body.isEmpty ? email.snippet : email.body)
+    }
+
+    /// The best available attachments
+    private var displayAttachments: [Attachment] {
+        fullAttachments ?? email.attachments
+    }
 
     enum ReplyType { case reply, replyAll, forward }
 
@@ -109,7 +123,7 @@ struct EmailDetailView: View {
                             .background(Color.accentPink.opacity(0.1))
                             .cornerRadius(8)
                         }
-                        .disabled(isTranslating)
+                        .disabled(isTranslating || isLoadingBody)
 
                         if translatedBody != nil {
                             Button {
@@ -140,7 +154,19 @@ struct EmailDetailView: View {
                         .padding(.top, 12)
 
                     // MARK: Email Body — 16px readable
-                    Text(translatedBody ?? email.body)
+                    if isLoadingBody {
+                        HStack(spacing: 8) {
+                            ProgressView().tint(.textTertiary)
+                            Text("LOADING FULL EMAIL...")
+                                .font(Typo.mono)
+                                .foregroundColor(.textTertiary)
+                                .tracking(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    }
+                    Text(translatedBody ?? displayBody)
                         .font(.system(size: 16, weight: .regular))
                         .foregroundColor(.textSecondary)
                         .lineSpacing(6)
@@ -148,7 +174,7 @@ struct EmailDetailView: View {
                         .padding(.top, 20)
 
                     // MARK: Attachments — Downloadable
-                    if !email.attachments.isEmpty {
+                    if !displayAttachments.isEmpty {
                         attachmentsSection
                             .padding(.top, 24)
                     }
@@ -241,23 +267,40 @@ struct EmailDetailView: View {
         }
         .toolbarBackground(Color.bgDeep, for: .navigationBar)
         .sheet(isPresented: $showReplySheet) {
-            ComposeView(replyTo: email, replyType: replyType)
+            // Use the full body if we've fetched it
+            let emailWithBody: Email = {
+                var e = email
+                if let body = fullBody { e.body = body }
+                if let atts = fullAttachments { e.attachments = atts }
+                return e
+            }()
+            ComposeView(replyTo: emailWithBody, replyType: replyType)
         }
         .quickLookPreview($previewURL)
         .task {
+            // Fetch full email body if we only have metadata
+            if email.body.isEmpty {
+                isLoadingBody = true
+                if let full = await gmailService.fetchFullEmail(emailId: email.id, accountEmail: email.accountEmail) {
+                    fullBody = full.body
+                    fullAttachments = full.attachments
+                }
+                isLoadingBody = false
+            }
+
             // Generate AI summary if not already available
             if email.aiSummary == nil && aiSummary == nil {
                 isLoadingSummary = true
                 aiSummary = await GeminiService.shared.summarizeEmail(
                     subject: email.subject,
-                    body: email.body,
+                    body: displayBody,
                     from: email.from.displayName
                 )
                 isLoadingSummary = false
             }
             // Fetch smart reply suggestions
             smartReplies = await GeminiService.shared.generateSmartReplies(
-                to: (from: email.from.displayName, subject: email.subject, body: email.body)
+                to: (from: email.from.displayName, subject: email.subject, body: displayBody)
             )
         }
     }
@@ -349,7 +392,7 @@ struct EmailDetailView: View {
                     .background(Color.accentGreen.opacity(0.1))
                     .cornerRadius(8)
                 }
-                .disabled(tts.isGenerating)
+                .disabled(tts.isGenerating || isLoadingBody)
             }
 
             // Error
@@ -376,7 +419,7 @@ struct EmailDetailView: View {
             return
         }
 
-        let textForAudio = email.body.isEmpty ? email.snippet : email.body
+        let textForAudio = displayBody.isEmpty ? email.snippet : displayBody
         guard !textForAudio.isEmpty else { return }
 
         // Prepare readable text: subject + from + body
@@ -491,7 +534,7 @@ struct EmailDetailView: View {
                 try data.write(to: fileURL)
                 previewURL = fileURL
             } catch {
-                print("[EmailDetailView] Failed to save attachment: \(error)")
+                debugLog("[EmailDetailView] Failed to save attachment: \(error)")
             }
         }
 
@@ -504,8 +547,17 @@ struct EmailDetailView: View {
         isTranslating = true
         translateError = nil
 
-        // Use body if available, otherwise fall back to snippet
-        let textToTranslate = email.body.isEmpty ? email.snippet : email.body
+        // Wait for body to load if still fetching
+        if isLoadingBody {
+            // Brief wait for body fetch to complete
+            for _ in 0..<30 {
+                if !isLoadingBody { break }
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            }
+        }
+
+        // Use best available text
+        let textToTranslate = displayBody.isEmpty ? email.snippet : displayBody
 
         guard !textToTranslate.isEmpty else {
             translateError = "No email content to translate"
@@ -513,7 +565,17 @@ struct EmailDetailView: View {
             return
         }
 
-        let result = await GeminiService.shared.translateEmail(body: textToTranslate, to: language)
+        // Clean HTML entities before sending to Gemini
+        let cleanText = textToTranslate
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#x27;", with: "'")
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+
+        let result = await GeminiService.shared.translateEmail(body: cleanText, to: language)
 
         if let translated = result, !translated.isEmpty {
             translatedBody = translated

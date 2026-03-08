@@ -22,10 +22,10 @@ class NotificationService: ObservableObject {
             let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
             isAuthorized = granted
             if granted {
-                print("[NotificationService] Permission granted")
+                debugLog("[NotificationService] Permission granted")
             }
         } catch {
-            print("[NotificationService] Permission error: \(error.localizedDescription)")
+            debugLog("[NotificationService] Permission error: \(error.localizedDescription)")
         }
     }
 
@@ -45,7 +45,7 @@ class NotificationService: ObservableObject {
         content.title = senderName
         content.subtitle = subject
         content.body = String(snippet.prefix(100))
-        content.sound = UNNotificationSound(named: UNNotificationSoundName("mail_received.caf"))
+        content.sound = UNNotificationSound(named: UNNotificationSoundName("new_mail.mp3"))
         content.badge = NSNumber(value: badgeCount + 1)
         content.userInfo = ["emailId": emailId]
         content.categoryIdentifier = "NEW_EMAIL"
@@ -61,7 +61,7 @@ class NotificationService: ObservableObject {
 
         center.add(request) { error in
             if let error = error {
-                print("[NotificationService] Failed to schedule: \(error.localizedDescription)")
+                debugLog("[NotificationService] Failed to schedule: \(error.localizedDescription)")
             }
         }
 

@@ -28,6 +28,8 @@
 		AB747AE97E383C134C931ADB /* Account.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED40AD236BF26DA50AE2AFA /* Account.swift */; };
 		ABCF1954E7D36765EAD4EF2A /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F93B49D5490F0C9F680431 /* CalendarEvent.swift */; };
 		B1A2048B57E90C9A83723B0A /* GmailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7D006C3AC93563391CA166 /* GmailService.swift */; };
+		D485B1EF2F5AF6FB00B0327D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D485B1EE2F5AF6FB00B0327D /* Assets.xcassets */; };
+		D485B1F12F5AFF9100B0327D /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D485B1F02F5AFF9100B0327D /* Logger.swift */; };
 		D8E07E9041B2D9025C619785 /* new_mail.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A2987FF7A3FBDE946A24AFD6 /* new_mail.mp3 */; };
 		DD42FD4922519E13FED88FDE /* BackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 087E27CA595D8AA53512C3AD /* BackendService.swift */; };
 		E18BA1536961892FD52EE21D /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CB2CED79DFF5063D8EB96C /* NotificationService.swift */; };
@@ -67,6 +69,8 @@
 		C9F93B49D5490F0C9F680431 /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
 		CD091CF94FC54D0158CCADE5 /* InAppNotificationBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppNotificationBanner.swift; sourceTree = "<group>"; };
 		D485B1ED2F5AEA3800B0327D /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		D485B1EE2F5AF6FB00B0327D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D485B1F02F5AFF9100B0327D /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		F34BE800D0BD7DBA6AB8CC40 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -181,6 +185,7 @@
 		C86B419DB220296DC9F8AB63 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				D485B1F02F5AFF9100B0327D /* Logger.swift */,
 				087E27CA595D8AA53512C3AD /* BackendService.swift */,
 				1E6FF256BE8F2046593F294B /* DeepgramService.swift */,
 				F34BE800D0BD7DBA6AB8CC40 /* GeminiService.swift */,
@@ -212,6 +217,7 @@
 		D546160A168157F67A38258A = {
 			isa = PBXGroup;
 			children = (
+				D485B1EE2F5AF6FB00B0327D /* Assets.xcassets */,
 				5BB17B308F2FDA4F7CF03C2C /* VoidMail */,
 				9BB2318BFBAFFF86E7B5F436 /* Products */,
 				D485B1ED2F5AEA3800B0327D /* Config.xcconfig */,
@@ -256,11 +262,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-					D729BEC86B136CE84D1B7EF5 = {
-						DevelopmentTeam = "";
-					};
-				};
 			};
 			buildConfigurationList = A5CEDECA48D01999FCC5F06D /* Build configuration list for PBXProject "VoidMail" */;
 			developmentRegion = en;
@@ -286,6 +287,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				90065FEBE8811F43C423FA17 /* email_sent.mp3 in Resources */,
+				D485B1EF2F5AF6FB00B0327D /* Assets.xcassets in Resources */,
 				D8E07E9041B2D9025C619785 /* new_mail.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -301,6 +303,7 @@
 				DD42FD4922519E13FED88FDE /* BackendService.swift in Sources */,
 				ABCF1954E7D36765EAD4EF2A /* CalendarEvent.swift in Sources */,
 				E70AFC21E27FA46EE7EBEE42 /* CalendarView.swift in Sources */,
+				D485B1F12F5AFF9100B0327D /* Logger.swift in Sources */,
 				F8901C2600EF8A3CE25229EE /* Colors.swift in Sources */,
 				91AD98C5ECA383014B6F2DE3 /* Components.swift in Sources */,
 				56DE9457B9CE0ADE16B61DC6 /* ComposeView.swift in Sources */,
@@ -456,7 +459,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MW33W7FWPD;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoidMail/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -476,7 +479,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MW33W7FWPD;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoidMail/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

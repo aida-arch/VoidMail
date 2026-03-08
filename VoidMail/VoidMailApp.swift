@@ -56,7 +56,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         switch response.actionIdentifier {
         case "REPLY_ACTION":
             if let emailId = userInfo["emailId"] as? String {
-                print("[AppDelegate] Reply to email: \(emailId)")
+                debugLog("[AppDelegate] Reply to email: \(emailId)")
             }
         case "ARCHIVE_ACTION":
             if let emailId = userInfo["emailId"] as? String {
@@ -72,7 +72,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
         default:
             if let emailId = userInfo["emailId"] as? String {
-                print("[AppDelegate] Open email: \(emailId)")
+                debugLog("[AppDelegate] Open email: \(emailId)")
             }
         }
 

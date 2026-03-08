@@ -280,7 +280,7 @@ class GoogleAuthService: ObservableObject {
             let callbackURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
                 let session = ASWebAuthenticationSession(
                     url: url,
-                    callbackURLScheme: "com.googleusercontent.apps.520426786442-3mq9486a1b5mtmo6nj6ibp78j375bpkf"
+                    callbackURLScheme: "com.googleusercontent.apps.520426786442-bgrp1vlc49i7g082cb36sk2ovk9mt2gj"
                 ) { callbackURL, error in
                     if let error = error {
                         continuation.resume(throwing: error)

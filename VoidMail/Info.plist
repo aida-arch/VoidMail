@@ -42,13 +42,13 @@
     <string>$(GEMINI_API_KEY)</string>
     <!-- Google Sign-In -->
     <key>GIDClientID</key>
-    <string>520426786442-3mq9486a1b5mtmo6nj6ibp78j375bpkf.apps.googleusercontent.com</string>
+    <string>520426786442-bgrp1vlc49i7g082cb36sk2ovk9mt2gj.apps.googleusercontent.com</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>com.googleusercontent.apps.520426786442-3mq9486a1b5mtmo6nj6ibp78j375bpkf</string>
+                <string>com.googleusercontent.apps.520426786442-bgrp1vlc49i7g082cb36sk2ovk9mt2gj</string>
             </array>
         </dict>
     </array>
@@ -64,5 +64,7 @@
     </dict>
     <key>BACKEND_BASE_URL</key>
     <string>$(BACKEND_BASE_URL)</string>
+    <key>DEEPGRAM_API_KEY</key>
+    <string>$(DEEPGRAM_API_KEY)</string>
 </dict>
 </plist>

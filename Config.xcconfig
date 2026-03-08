@@ -1,4 +1,5 @@
 // Config.xcconfig
 // DO NOT commit this file — add it to .gitignore
-GEMINI_API_KEY = AIzaSyBTFSjAiqxkgkfBLhR6Mn-ALuAmepHcybk
+GEMINI_API_KEY = AIzaSyCZHk6u4O55qFoQuAsSvgowFaOrQ7sTX9c
 BACKEND_BASE_URL = https:/$()/void-mail.vercel.app
+DEEPGRAM_API_KEY = 83ae019a53e7258c6fa87186d521f628dbc7eb2f
