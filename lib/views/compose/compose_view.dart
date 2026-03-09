@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../design_system/colors.dart';
 import '../../design_system/typography.dart';
 import '../../models/email.dart';
 import '../../services/auth_service.dart';
 import '../../services/gmail_service.dart';
 import '../../services/gemini_service.dart';
+import '../../services/sound_service.dart';
 
 enum ComposeMode { compose, reply, replyAll, forward }
 
-/// Email composition with multi-account, AI drafts, attachments
+/// Email composition with multi-account, AI drafts, speech-to-text,
+/// AI subject generation, file/photo picker, and attachments
 class ComposeView extends StatefulWidget {
   final ComposeMode mode;
   final Email? replyTo;
@@ -35,6 +38,7 @@ class _ComposeViewState extends State<ComposeView>
   final _subjectController = TextEditingController();
   final _bodyController = TextEditingController();
   final GeminiService _gemini = GeminiService();
+  final SoundService _sound = SoundService();
 
   bool _showCc = false;
   bool _showBcc = false;
@@ -42,7 +46,17 @@ class _ComposeViewState extends State<ComposeView>
   bool _isSending = false;
   bool _showSchedule = false;
   DateTime? _scheduledDate;
+  TimeOfDay? _scheduledTime;
   String? _selectedFromEmail;
+
+  // New: Attachments
+  final List<_AttachedFile> _attachedFiles = [];
+
+  // New: Speech-to-text state
+  bool _isRecording = false;
+
+  // New: AI Subject generation
+  bool _isGeneratingSubject = false;
 
   @override
   void initState() {
@@ -121,6 +135,89 @@ class _ComposeViewState extends State<ComposeView>
     }
   }
 
+  /// Generate AI subject from body content
+  Future<void> _generateAISubject() async {
+    if (_bodyController.text.isEmpty) return;
+    setState(() => _isGeneratingSubject = true);
+    final subject =
+        await _gemini.generateEmailSubject(body: _bodyController.text);
+    if (mounted && subject != null) {
+      setState(() {
+        _subjectController.text = subject;
+        _isGeneratingSubject = false;
+      });
+    } else {
+      setState(() => _isGeneratingSubject = false);
+    }
+  }
+
+  /// Pick files to attach
+  Future<void> _pickFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+      if (result != null && mounted) {
+        setState(() {
+          for (final file in result.files) {
+            if (file.path != null) {
+              _attachedFiles.add(_AttachedFile(
+                name: file.name,
+                path: file.path!,
+                size: file.size,
+                mimeType: _mimeTypeForExtension(file.extension ?? ''),
+              ));
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[ComposeView] File picker error: $e');
+    }
+  }
+
+  /// Pick photos to attach
+  Future<void> _pickPhotos() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.image,
+      );
+      if (result != null && mounted) {
+        setState(() {
+          for (final file in result.files) {
+            if (file.path != null) {
+              _attachedFiles.add(_AttachedFile(
+                name: file.name,
+                path: file.path!,
+                size: file.size,
+                mimeType: _mimeTypeForExtension(file.extension ?? ''),
+              ));
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[ComposeView] Photo picker error: $e');
+    }
+  }
+
+  /// Toggle speech-to-text recording (simulated)
+  void _toggleRecording() {
+    setState(() => _isRecording = !_isRecording);
+    if (_isRecording) {
+      _sound.playTapFeedback();
+      // In production, would use speech_to_text package
+      // For now, simulate recording state
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted && _isRecording) {
+          setState(() => _isRecording = false);
+        }
+      });
+    }
+  }
+
   Future<void> _send() async {
     if (_toController.text.isEmpty) return;
     setState(() => _isSending = true);
@@ -137,8 +234,65 @@ class _ComposeViewState extends State<ComposeView>
 
     if (mounted) {
       setState(() => _isSending = false);
-      if (success) Navigator.pop(context);
+      if (success) {
+        _sound.playSendSound();
+        Navigator.pop(context);
+      }
     }
+  }
+
+  String _mimeTypeForExtension(String ext) {
+    const map = {
+      'pdf': 'application/pdf',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'doc': 'application/msword',
+      'docx':
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'pptx':
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain',
+      'csv': 'text/csv',
+      'zip': 'application/zip',
+      'mp4': 'video/mp4',
+      'mp3': 'audio/mpeg',
+      'html': 'text/html',
+    };
+    return map[ext.toLowerCase()] ?? 'application/octet-stream';
+  }
+
+  IconData _iconForMime(String mime) {
+    if (mime.contains('pdf')) return Icons.picture_as_pdf;
+    if (mime.contains('image')) return Icons.image;
+    if (mime.contains('video')) return Icons.videocam;
+    if (mime.contains('audio')) return Icons.audiotrack;
+    if (mime.contains('spreadsheet') ||
+        mime.contains('csv') ||
+        mime.contains('excel')) {
+      return Icons.table_chart;
+    }
+    if (mime.contains('word') || mime.contains('msword')) {
+      return Icons.article;
+    }
+    if (mime.contains('presentation') || mime.contains('powerpoint')) {
+      return Icons.slideshow;
+    }
+    if (mime.contains('zip') || mime.contains('compressed')) {
+      return Icons.folder_zip;
+    }
+    if (mime.contains('text')) return Icons.text_snippet;
+    return Icons.attach_file;
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   @override
@@ -198,6 +352,12 @@ class _ComposeViewState extends State<ComposeView>
                     _buildField('SUBJECT', _subjectController),
 
                     const Divider(color: VoidColors.border, height: 0.5),
+
+                    // Attached files
+                    if (_attachedFiles.isNotEmpty) _buildAttachmentChips(),
+
+                    // AI Drafting banner
+                    if (_isGeneratingDraft) _buildAIDraftBanner(),
 
                     // Body
                     Padding(
@@ -316,8 +476,7 @@ class _ComposeViewState extends State<ComposeView>
               decoration: InputDecoration(
                 border: InputBorder.none,
                 filled: false,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 hintStyle: Typo.body.copyWith(
                   fontSize: 15,
                   color: VoidColors.textTertiary,
@@ -363,51 +522,194 @@ class _ComposeViewState extends State<ComposeView>
     );
   }
 
+  /// Attachment chips (horizontal scroll)
+  Widget _buildAttachmentChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        children: [
+          ..._attachedFiles.asMap().entries.map((entry) {
+            final index = entry.key;
+            final file = entry.value;
+            return Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: VoidColors.bgCard,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _iconForMime(file.mimeType),
+                    size: 15,
+                    color: VoidColors.accentSkyBlue,
+                  ),
+                  const SizedBox(width: 6),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        file.name,
+                        style: Typo.subhead.copyWith(
+                          fontSize: 13,
+                          color: VoidColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        _formatFileSize(file.size),
+                        style: Typo.monoSmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _attachedFiles.removeAt(index));
+                    },
+                    child: const Icon(
+                      Icons.cancel,
+                      size: 16,
+                      color: VoidColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          // Add more button
+          GestureDetector(
+            onTap: _pickFiles,
+            child: const Icon(
+              Icons.add_circle_outline,
+              size: 20,
+              color: VoidColors.accentSkyBlue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// AI Draft loading banner
+  Widget _buildAIDraftBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      color: VoidColors.accentSkyBlue.withValues(alpha: 0.08),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: VoidColors.accentSkyBlue,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'AI IS DRAFTING...',
+            style: Typo.mono.copyWith(
+              color: VoidColors.accentSkyBlue,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSchedulePicker() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Row(
+      child: Column(
         children: [
-          const Icon(Icons.schedule, size: 18, color: VoidColors.accentYellow),
-          const SizedBox(width: 8),
-          Text(
-            _scheduledDate != null
-                ? 'Scheduled: ${_scheduledDate!.month}/${_scheduledDate!.day} ${_scheduledDate!.hour}:${_scheduledDate!.minute.toString().padLeft(2, '0')}'
-                : 'Schedule Send',
-            style: Typo.subhead.copyWith(
-              color: VoidColors.accentYellow,
-              fontSize: 14,
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now().add(const Duration(hours: 1)),
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-                builder: (context, child) {
-                  return Theme(
-                    data: ThemeData.dark().copyWith(
-                      colorScheme: const ColorScheme.dark(
-                        primary: VoidColors.accentPink,
-                        surface: VoidColors.bgCard,
-                      ),
-                    ),
-                    child: child!,
+          Row(
+            children: [
+              const Icon(Icons.schedule,
+                  size: 18, color: VoidColors.accentYellow),
+              const SizedBox(width: 8),
+              Text(
+                _scheduledDate != null
+                    ? 'Scheduled: ${_scheduledDate!.month}/${_scheduledDate!.day}'
+                        '${_scheduledTime != null ? ' ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}' : ''}'
+                    : 'Schedule Send',
+                style: Typo.subhead.copyWith(
+                  color: VoidColors.accentYellow,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              // Date picker
+              GestureDetector(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate:
+                        DateTime.now().add(const Duration(hours: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: ThemeData.dark().copyWith(
+                          colorScheme: const ColorScheme.dark(
+                            primary: VoidColors.accentPink,
+                            surface: VoidColors.bgCard,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
+                  if (date != null && mounted) {
+                    setState(() => _scheduledDate = date);
+                  }
                 },
-              );
-              if (date != null && mounted) {
-                setState(() => _scheduledDate = date);
-              }
-            },
-            child: const Icon(
-              Icons.edit_calendar,
-              size: 18,
-              color: VoidColors.textTertiary,
-            ),
+                child: const Icon(
+                  Icons.edit_calendar,
+                  size: 18,
+                  color: VoidColors.textTertiary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Time picker
+              GestureDetector(
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                    builder: (context, child) {
+                      return Theme(
+                        data: ThemeData.dark().copyWith(
+                          colorScheme: const ColorScheme.dark(
+                            primary: VoidColors.accentPink,
+                            surface: VoidColors.bgCard,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (time != null && mounted) {
+                    setState(() => _scheduledTime = time);
+                  }
+                },
+                child: const Icon(
+                  Icons.access_time,
+                  size: 18,
+                  color: VoidColors.textTertiary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -416,102 +718,195 @@ class _ComposeViewState extends State<ComposeView>
 
   Widget _buildToolbar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
       decoration: const BoxDecoration(
-        color: VoidColors.bgSurface,
-        border: Border(
-          top: BorderSide(color: VoidColors.border, width: 0.5),
-        ),
+        color: VoidColors.bgDeep,
       ),
-      child: Row(
-        children: [
-          // AI Draft
-          IconButton(
-            onPressed: _isGeneratingDraft ? null : _generateAIDraft,
-            icon: _isGeneratingDraft
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: VoidColors.accentSkyBlue,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: VoidColors.bgCard,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: Row(
+          children: [
+            // AI Draft (capsule button)
+            GestureDetector(
+              onTap: _isGeneratingDraft ? null : _generateAIDraft,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: VoidColors.accentSkyBlue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _isGeneratingDraft
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: VoidColors.accentSkyBlue,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.auto_awesome,
+                            size: 14,
+                            color: VoidColors.accentSkyBlue,
+                          ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'AI',
+                      style: Typo.mono.copyWith(
+                        color: VoidColors.accentSkyBlue,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  )
-                : const Icon(
-                    Icons.auto_awesome,
-                    size: 20,
-                    color: VoidColors.accentSkyBlue,
-                  ),
-          ),
+                  ],
+                ),
+              ),
+            ),
 
-          // Schedule
-          IconButton(
-            onPressed: () => setState(() => _showSchedule = !_showSchedule),
-            icon: Icon(
-              Icons.schedule,
-              size: 20,
+            const Spacer(),
+
+            // Attach files
+            _toolbarIcon(
+              Icons.attach_file,
+              color: _attachedFiles.isNotEmpty
+                  ? VoidColors.accentSkyBlue
+                  : VoidColors.textTertiary,
+              onTap: _pickFiles,
+            ),
+
+            // Photos
+            _toolbarIcon(
+              Icons.photo,
+              onTap: _pickPhotos,
+            ),
+
+            // Microphone (Speech to Text)
+            _toolbarIcon(
+              _isRecording ? Icons.mic : Icons.mic_none,
+              color: _isRecording
+                  ? VoidColors.accentPink
+                  : VoidColors.textTertiary,
+              onTap: _toggleRecording,
+            ),
+
+            // Magic wand (AI Subject)
+            _toolbarIcon(
+              Icons.auto_fix_high,
+              color: _isGeneratingSubject
+                  ? VoidColors.accentYellow
+                  : VoidColors.textTertiary,
+              onTap: _bodyController.text.isEmpty || _isGeneratingSubject
+                  ? null
+                  : _generateAISubject,
+            ),
+
+            // Schedule
+            _toolbarIcon(
+              _showSchedule ? Icons.schedule : Icons.schedule_outlined,
               color: _showSchedule
                   ? VoidColors.accentYellow
                   : VoidColors.textTertiary,
+              onTap: () =>
+                  setState(() => _showSchedule = !_showSchedule),
             ),
-          ),
 
-          // Attach
-          IconButton(
-            onPressed: () {
-              // File picker
-            },
-            icon: const Icon(
-              Icons.attach_file,
-              size: 20,
-              color: VoidColors.textTertiary,
-            ),
-          ),
+            const SizedBox(width: 4),
 
-          const Spacer(),
-
-          // Send button
-          GestureDetector(
-            onTap: _isSending ? null : _send,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: VoidColors.accentPink,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: _isSending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: VoidColors.textInverse,
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.send,
-                          size: 16,
+            // Send button
+            GestureDetector(
+              onTap: _isSending ? null : _send,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _toController.text.isNotEmpty
+                      ? VoidColors.accentPink
+                      : VoidColors.bgCardHover,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: _isSending
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
                           color: VoidColors.textInverse,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Send',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: VoidColors.textInverse,
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _showSchedule ? Icons.schedule_send : Icons.send,
+                            size: 13,
+                            color: _toController.text.isNotEmpty
+                                ? VoidColors.textInverse
+                                : VoidColors.textTertiary,
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _showSchedule ? 'SCHEDULE' : 'SEND',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace',
+                              letterSpacing: 1.5,
+                              color: _toController.text.isNotEmpty
+                                  ? VoidColors.textInverse
+                                  : VoidColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  Widget _toolbarIcon(
+    IconData icon, {
+    Color color = VoidColors.textTertiary,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: color != VoidColors.textTertiary
+              ? color.withValues(alpha: 0.12)
+              : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 18, color: color),
+      ),
+    );
+  }
+}
+
+/// Attached file model
+class _AttachedFile {
+  final String name;
+  final String path;
+  final int size;
+  final String mimeType;
+
+  _AttachedFile({
+    required this.name,
+    required this.path,
+    required this.size,
+    required this.mimeType,
+  });
 }

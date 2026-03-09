@@ -121,4 +121,13 @@ class Typo {
     fontSize: 13,
     letterSpacing: 2.5,
   );
+
+  // Inbox Title - 48pt heavy (between title and display)
+  static TextStyle inboxTitle = const TextStyle(
+    fontSize: 48,
+    fontWeight: FontWeight.w900,
+    color: VoidColors.textPrimary,
+    letterSpacing: -1.5,
+    height: 1.0,
+  );
 }

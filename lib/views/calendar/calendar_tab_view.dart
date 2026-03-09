@@ -61,13 +61,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
-        ScreenHeader(
-          metaLabel: DateFormat('yyyy').format(_currentMonth),
-          title: 'CALENDAR',
-        ),
-
-        // Month navigation
+        // Month navigation (integrated header)
         _buildMonthNav(),
 
         const SizedBox(height: 12),
@@ -121,24 +115,28 @@ class _CalendarTabViewState extends State<CalendarTabView> {
 
   Widget _buildMonthNav() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
           Text(
             DateFormat('MMMM').format(_currentMonth).toUpperCase(),
-            style: Typo.title3,
+            style: Typo.title2.copyWith(letterSpacing: -0.5),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               setState(() {
                 _currentMonth = DateTime(
                     _currentMonth.year, _currentMonth.month - 1, 1);
               });
             },
-            icon: const Icon(
-              Icons.chevron_left,
-              color: VoidColors.textSecondary,
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Icon(
+                Icons.chevron_left,
+                size: 16,
+                color: VoidColors.textSecondary,
+              ),
             ),
           ),
           GestureDetector(
@@ -153,25 +151,31 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: VoidColors.bgCard,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: VoidColors.border, width: 0.5),
+                borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 'TODAY',
-                style: Typo.metaLabel.copyWith(fontSize: 11),
+                style: Typo.mono.copyWith(
+                  color: VoidColors.textPrimary,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               setState(() {
                 _currentMonth = DateTime(
                     _currentMonth.year, _currentMonth.month + 1, 1);
               });
             },
-            icon: const Icon(
-              Icons.chevron_right,
-              color: VoidColors.textSecondary,
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: VoidColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -189,7 +193,10 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                   child: Center(
                     child: Text(
                       d,
-                      style: Typo.metaLabel.copyWith(fontSize: 11),
+                      style: Typo.mono.copyWith(
+                        fontSize: 12,
+                        color: VoidColors.textTertiary,
+                      ),
                     ),
                   ),
                 ))
@@ -224,13 +231,18 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                   onTap: () => setState(() => _selectedDate = date),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    height: 44,
-                    margin: const EdgeInsets.all(1),
+                    width: 36,
+                    height: 36,
+                    margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: isToday
-                          ? VoidColors.bgCard
+                      color: isSelected
+                          ? VoidColors.textPrimary
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
+                      border: (!isSelected && isToday)
+                          ? Border.all(
+                              color: VoidColors.textPrimary, width: 1.5)
+                          : null,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -238,13 +250,16 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                         Text(
                           '${date.day}',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
+                            fontFamily: 'monospace',
                             fontWeight: isToday || isSelected
                                 ? FontWeight.bold
                                 : FontWeight.w400,
-                            color: isCurrentMonth
-                                ? VoidColors.textPrimary
-                                : VoidColors.textTertiary,
+                            color: isSelected
+                                ? VoidColors.textInverse
+                                : isCurrentMonth
+                                    ? VoidColors.textPrimary
+                                    : VoidColors.textTertiary,
                           ),
                         ),
                         if (eventColors.isNotEmpty)
@@ -254,11 +269,13 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: eventColors.map((color) {
                                 return Container(
-                                  width: 4,
-                                  height: 4,
+                                  width: 5,
+                                  height: 5,
                                   margin: const EdgeInsets.symmetric(horizontal: 1),
                                   decoration: BoxDecoration(
-                                    color: color,
+                                    color: isSelected
+                                        ? VoidColors.textInverse
+                                        : color,
                                     shape: BoxShape.circle,
                                   ),
                                 );
@@ -284,10 +301,18 @@ class _EventCard extends StatelessWidget {
 
   const _EventCard({required this.event});
 
+  String get _startTimeFormatted {
+    final hour = event.startDate.hour;
+    final minute = event.startDate.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    return '$h:$minute $period';
+  }
+
   @override
   Widget build(BuildContext context) {
     return VoidCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       onTap: () {
         showModalBottomSheet(
           context: context,
@@ -299,9 +324,31 @@ class _EventCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Time column
+          SizedBox(
+            width: 65,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _startTimeFormatted,
+                  style: Typo.mono.copyWith(
+                    color: VoidColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  event.duration,
+                  style: Typo.monoSmall.copyWith(
+                    color: VoidColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Color bar
           Container(
-            width: 4,
+            width: 3,
             height: 50,
             decoration: BoxDecoration(
               color: event.color,
@@ -316,15 +363,8 @@ class _EventCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event.timeRange,
-                  style: Typo.monoSmall.copyWith(
-                    color: event.color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
                   event.title,
-                  style: Typo.headline.copyWith(fontSize: 16),
+                  style: Typo.headline,
                 ),
                 if (event.location != null) ...[
                   const SizedBox(height: 4),
@@ -336,9 +376,13 @@ class _EventCard extends StatelessWidget {
                         color: VoidColors.textTertiary,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        event.location!,
-                        style: Typo.subhead.copyWith(fontSize: 13),
+                      Expanded(
+                        child: Text(
+                          event.location!,
+                          style: Typo.subhead.copyWith(fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -363,17 +407,17 @@ class _EventCard extends StatelessWidget {
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
+                          horizontal: 14,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: event.color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           'JOIN',
-                          style: Typo.metaLabel.copyWith(
-                            fontSize: 11,
+                          style: Typo.mono.copyWith(
+                            fontSize: 12,
                             color: event.color,
                           ),
                         ),

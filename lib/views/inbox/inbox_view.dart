@@ -125,102 +125,132 @@ class _InboxViewState extends State<InboxView> {
           Row(
             children: [
               Text(
-                '${gmail.unreadCount} UNREAD',
+                'VOIDMAIL',
                 style: Typo.metaLabel,
               ),
               const Spacer(),
-              // Sync button
+              // Unread count
+              Text(
+                '${gmail.unreadCount}',
+                style: Typo.mono.copyWith(
+                  color: gmail.unreadCount > 0
+                      ? VoidColors.accentYellow
+                      : VoidColors.textTertiary,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Sync circle button
               GestureDetector(
                 onTap: () => gmail.fetchEmails(),
-                child: gmail.isSyncing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: VoidColors.accentGreen,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.sync,
-                        size: 20,
-                        color: VoidColors.textTertiary,
-                      ),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: VoidColors.accentGreen.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: gmail.isSyncing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: VoidColors.accentGreen,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.refresh,
+                            size: 16,
+                            color: VoidColors.accentGreen,
+                          ),
+                  ),
+                ),
               ),
-              const SizedBox(width: 16),
-              // Helix AI button
+              const SizedBox(width: 8),
+              // Helix AI circle button
               GestureDetector(
                 onTap: widget.onHelixTap,
-                child: const Icon(
-                  Icons.auto_awesome,
-                  size: 20,
-                  color: VoidColors.accentSkyBlue,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Filter menu
-              PopupMenuButton<bool>(
-                icon: Icon(
-                  _showUnreadOnly
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                  size: 20,
-                  color: VoidColors.textTertiary,
-                ),
-                color: VoidColors.bgCard,
-                onSelected: (val) =>
-                    setState(() => _showUnreadOnly = val),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: false,
-                    child: Text('All', style: Typo.body),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: VoidColors.accentSkyBlue.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
                   ),
-                  PopupMenuItem(
-                    value: true,
-                    child: Text('Unread Only', style: Typo.body),
+                  child: const Center(
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: 16,
+                      color: VoidColors.accentSkyBlue,
+                    ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          // Title
-          Text(
-            'INBOX',
-            style: Typo.displayTitle,
-          ),
-
-          // Account selector
-          if (auth.accounts.length > 1)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: SizedBox(
-                height: 30,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    TagChip(
-                      label: 'All',
-                      isActive: _selectedAccount == null,
-                      onTap: () =>
-                          setState(() => _selectedAccount = null),
-                    ),
-                    const SizedBox(width: 8),
-                    ...auth.accounts.map((account) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: TagChip(
-                            label: account.label,
-                            isActive:
-                                _selectedAccount == account.email,
-                            onTap: () => setState(
-                                () => _selectedAccount = account.email),
-                          ),
-                        )),
-                  ],
+          // Title row with inline account dropdown + read filter
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'INBOX',
+                style: Typo.inboxTitle,
+              ),
+              const SizedBox(width: 12),
+              if (auth.accounts.length > 1)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TagChip(
+                    label: _selectedAccount ?? 'All',
+                    onTap: () {
+                      _showAccountPicker(auth);
+                    },
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TagChip(
+                  label: _showUnreadOnly ? 'Unread' : 'All',
+                  isActive: _showUnreadOnly,
+                  onTap: () =>
+                      setState(() => _showUnreadOnly = !_showUnreadOnly),
                 ),
               ),
-            ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showAccountPicker(AuthService auth) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: VoidColors.bgCard,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('All Accounts', style: Typo.body),
+              onTap: () {
+                setState(() => _selectedAccount = null);
+                Navigator.pop(context);
+              },
+            ),
+            ...auth.accounts.map((account) => ListTile(
+                  title: Text(account.label, style: Typo.body),
+                  subtitle: Text(account.email, style: Typo.monoSmall),
+                  onTap: () {
+                    setState(() => _selectedAccount = account.email);
+                    Navigator.pop(context);
+                  },
+                )),
+          ],
+        ),
       ),
     );
   }

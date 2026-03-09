@@ -6,8 +6,10 @@ import '../../design_system/components.dart';
 import '../../models/account.dart';
 import '../../services/gmail_service.dart';
 import '../../services/gemini_service.dart';
+import '../../services/calendar_service.dart';
 
-/// Helix-o1 AI Copilot Dashboard with chat, digest, alerts
+/// Helix-o1 AI Copilot Dashboard with real-data digest, dynamic alerts,
+/// inbox context in chat, inbox zero progress bar, real calendar count
 class HelixO1View extends StatefulWidget {
   const HelixO1View({super.key});
 
@@ -27,27 +29,8 @@ class _HelixO1ViewState extends State<HelixO1View>
   final List<_ChatMessage> _messages = [];
   bool _isChatLoading = false;
 
-  // Mock alerts
-  final List<AIAlert> _alerts = [
-    AIAlert(
-      id: 'a1',
-      type: AlertType.awaitingReply,
-      title: 'Sarah Chen',
-      subtitle: 'Q4 Product Roadmap Review - awaiting your response',
-    ),
-    AIAlert(
-      id: 'a2',
-      type: AlertType.upcomingMeeting,
-      title: 'Design Review',
-      subtitle: 'In 2 hours - Conference Room B',
-    ),
-    AIAlert(
-      id: 'a3',
-      type: AlertType.newSender,
-      title: 'Alex Rivera',
-      subtitle: 'First email from this sender',
-    ),
-  ];
+  // Dynamic alerts (generated from real data)
+  List<AIAlert> _alerts = [];
 
   @override
   void initState() {
@@ -57,6 +40,7 @@ class _HelixO1ViewState extends State<HelixO1View>
       duration: const Duration(milliseconds: 600),
     )..forward();
     _loadDigest();
+    _generateDynamicAlerts();
   }
 
   @override
@@ -67,13 +51,23 @@ class _HelixO1ViewState extends State<HelixO1View>
     super.dispose();
   }
 
+  /// Load real-data digest with actual email subjects and snippets
   Future<void> _loadDigest() async {
     final gmail = context.read<GmailService>();
     setState(() => _isLoadingDigest = true);
 
+    // Build real email data for the digest
+    final emailData = gmail.emails.take(10).map((e) => {
+          'from': e.from.displayName,
+          'subject': e.subject,
+          'snippet': e.snippet,
+          'isRead': e.isRead,
+        }).toList();
+
     final digest = await _gemini.generateDigest(
       emailCount: gmail.emails.length,
       unreadCount: gmail.unreadCount,
+      emails: emailData,
     );
 
     if (mounted) {
@@ -82,6 +76,86 @@ class _HelixO1ViewState extends State<HelixO1View>
         _isLoadingDigest = false;
       });
     }
+  }
+
+  /// Generate dynamic smart alerts from actual email/calendar data
+  void _generateDynamicAlerts() {
+    final gmail = context.read<GmailService>();
+    final calendar = context.read<CalendarService>();
+    final alerts = <AIAlert>[];
+
+    // Unread emails older than 1 day → "Awaiting Reply"
+    final now = DateTime.now();
+    for (final email in gmail.emails) {
+      if (!email.isRead &&
+          now.difference(email.date).inHours > 24) {
+        alerts.add(AIAlert(
+          id: 'await_${email.id}',
+          type: AlertType.awaitingReply,
+          title: email.from.displayName,
+          subtitle: '${email.subject} - awaiting your response',
+          emailId: email.id,
+        ));
+        if (alerts.where((a) => a.type == AlertType.awaitingReply).length >= 2) break;
+      }
+    }
+
+    // Upcoming meetings today
+    final todayEvents = calendar.events.where((e) {
+      return e.startDate.year == now.year &&
+          e.startDate.month == now.month &&
+          e.startDate.day == now.day &&
+          e.startDate.isAfter(now);
+    }).toList();
+
+    for (final event in todayEvents.take(2)) {
+      final diff = event.startDate.difference(now);
+      final timeStr = diff.inHours > 0
+          ? 'In ${diff.inHours} hour${diff.inHours > 1 ? 's' : ''}'
+          : 'In ${diff.inMinutes} min';
+      alerts.add(AIAlert(
+        id: 'meeting_${event.id}',
+        type: AlertType.upcomingMeeting,
+        title: event.title,
+        subtitle: '$timeStr${event.location != null ? ' - ${event.location}' : ''}',
+        eventId: event.id,
+      ));
+    }
+
+    // New senders (emails from addresses seen only once)
+    final senderCounts = <String, int>{};
+    for (final email in gmail.emails) {
+      senderCounts[email.from.email] =
+          (senderCounts[email.from.email] ?? 0) + 1;
+    }
+    for (final email in gmail.emails) {
+      if (senderCounts[email.from.email] == 1 && !email.isRead) {
+        alerts.add(AIAlert(
+          id: 'new_${email.id}',
+          type: AlertType.newSender,
+          title: email.from.displayName,
+          subtitle: 'First email from this sender',
+          emailId: email.id,
+        ));
+        if (alerts.where((a) => a.type == AlertType.newSender).isNotEmpty) break;
+      }
+    }
+
+    setState(() => _alerts = alerts);
+  }
+
+  /// Build inbox context string for chat
+  String _buildInboxContext() {
+    final gmail = context.read<GmailService>();
+    final recentEmails = gmail.emails.take(5);
+    final buffer = StringBuffer();
+    buffer.writeln('Inbox context (${gmail.emails.length} total, ${gmail.unreadCount} unread):');
+    for (final email in recentEmails) {
+      buffer.writeln(
+          '- From: ${email.from.displayName}, Subject: ${email.subject}, '
+          'Read: ${email.isRead}, Starred: ${email.isStarred}');
+    }
+    return buffer.toString();
   }
 
   Future<void> _sendMessage() async {
@@ -95,7 +169,11 @@ class _HelixO1ViewState extends State<HelixO1View>
     _chatController.clear();
     _scrollToBottom();
 
-    final reply = await _gemini.chat(message: text);
+    // Include inbox context in chat
+    final reply = await _gemini.chat(
+      message: text,
+      context: _buildInboxContext(),
+    );
 
     if (mounted) {
       setState(() {
@@ -124,6 +202,14 @@ class _HelixO1ViewState extends State<HelixO1View>
   @override
   Widget build(BuildContext context) {
     final gmail = context.watch<GmailService>();
+    final calendar = context.watch<CalendarService>();
+
+    // Real calendar event count for today
+    final now = DateTime.now();
+    final todayEventCount = calendar.events.where((e) =>
+        e.startDate.year == now.year &&
+        e.startDate.month == now.month &&
+        e.startDate.day == now.day).length;
 
     return Scaffold(
       backgroundColor: VoidColors.bgDeep,
@@ -148,12 +234,16 @@ class _HelixO1ViewState extends State<HelixO1View>
                     _buildBranding(),
                     const SizedBox(height: 24),
 
+                    // Inbox Zero Progress Bar
+                    _buildInboxZeroProgress(gmail),
+                    const SizedBox(height: 16),
+
                     // Inbox Digest
                     _buildDigestCard(),
                     const SizedBox(height: 16),
 
                     // Quick Stats
-                    _buildQuickStats(gmail),
+                    _buildQuickStats(gmail, todayEventCount),
                     const SizedBox(height: 24),
 
                     // Smart Alerts
@@ -242,6 +332,67 @@ class _HelixO1ViewState extends State<HelixO1View>
     );
   }
 
+  /// Inbox Zero Progress Bar
+  Widget _buildInboxZeroProgress(GmailService gmail) {
+    final total = gmail.emails.length;
+    final read = total - gmail.unreadCount;
+    final progress = total > 0 ? read / total : 1.0;
+    final percentage = (progress * 100).toInt();
+
+    return VoidCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.inbox,
+                size: 16,
+                color: VoidColors.accentGreen,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'INBOX ZERO',
+                style: Typo.metaLabel.copyWith(
+                  color: VoidColors.accentGreen,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$percentage%',
+                style: Typo.mono.copyWith(
+                  color: VoidColors.accentGreen,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: VoidColors.bgCardHover,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress >= 1.0
+                    ? VoidColors.accentGreen
+                    : VoidColors.accentSkyBlue,
+              ),
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$read of $total emails read',
+            style: Typo.monoSmall,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDigestCard() {
     return VoidCard(
       child: Column(
@@ -284,7 +435,7 @@ class _HelixO1ViewState extends State<HelixO1View>
     );
   }
 
-  Widget _buildQuickStats(GmailService gmail) {
+  Widget _buildQuickStats(GmailService gmail, int todayEventCount) {
     return Row(
       children: [
         _buildStatTile(
@@ -302,7 +453,7 @@ class _HelixO1ViewState extends State<HelixO1View>
         ),
         const SizedBox(width: 8),
         _buildStatTile(
-          '3',
+          '$todayEventCount',
           'Events',
           Icons.event,
           VoidColors.accentSkyBlue,

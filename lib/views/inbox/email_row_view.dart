@@ -62,7 +62,7 @@ class _EmailRowViewState extends State<EmailRowView>
       opacity: _entranceAnimation,
       child: SlideTransition(
         position: Tween<Offset>(
-          begin: const Offset(0, 0.1),
+          begin: const Offset(0.05, 0),
           end: Offset.zero,
         ).animate(_entranceAnimation),
         child: GestureDetector(
@@ -70,7 +70,7 @@ class _EmailRowViewState extends State<EmailRowView>
           onHorizontalDragUpdate: (details) {
             setState(() {
               _dragOffset += details.primaryDelta ?? 0;
-              _dragOffset = _dragOffset.clamp(-120.0, 120.0);
+              _dragOffset = _dragOffset.clamp(-80.0, 80.0);
             });
           },
           onHorizontalDragEnd: (details) {
@@ -97,18 +97,23 @@ class _EmailRowViewState extends State<EmailRowView>
                     : const Duration(milliseconds: 300),
                 curve: Curves.elasticOut,
                 transform: Matrix4.translationValues(_dragOffset, 0, 0),
-                child: Container(
-                  color: VoidColors.bgDeep,
+                child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: VoidColors.bgEmailRow,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Avatar with account color bar
                       _buildAvatar(),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
 
                       // Email content
                       Expanded(
@@ -179,6 +184,7 @@ class _EmailRowViewState extends State<EmailRowView>
                     ],
                   ),
                 ),
+                ),
               ),
             ],
           ),
@@ -198,18 +204,20 @@ class _EmailRowViewState extends State<EmailRowView>
       children: [
         InitialsAvatar(
           name: widget.email.from.displayName,
-          size: 40,
+          size: 44,
         ),
         // Account color indicator (left edge bar)
         if (widget.email.accountEmail != null)
           Positioned(
-            left: 0,
+            left: -8,
             top: 8,
             bottom: 8,
             child: Container(
               width: 3,
               decoration: BoxDecoration(
-                color: VoidColors.accentPink,
+                color: widget.email.isRead
+                    ? VoidColors.accentPink
+                    : VoidColors.accentYellow,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

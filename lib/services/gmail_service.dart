@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/email.dart';
 import 'backend_service.dart';
 import 'notification_service.dart';
+import 'in_app_notification_manager.dart';
 
 /// Gmail API Service - Fetches, sends, and modifies emails
 class GmailService extends ChangeNotifier {
@@ -98,11 +99,22 @@ class GmailService extends ChangeNotifier {
         _emails.sort((a, b) => b.date.compareTo(a.date));
 
         final notificationService = NotificationService();
+        final inAppManager = InAppNotificationManager();
+
         for (final email in newEmails) {
+          // System notification
           notificationService.showEmailNotification(
             emailId: email.id,
             senderName: email.from.displayName,
             subject: email.subject,
+          );
+
+          // In-app banner notification
+          inAppManager.show(
+            senderName: email.from.displayName,
+            subject: email.subject,
+            snippet: email.snippet,
+            emailId: email.id,
           );
         }
         await _persistKnownIds();

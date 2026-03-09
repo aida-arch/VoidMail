@@ -7,6 +7,8 @@ import '../../design_system/components.dart';
 import '../../models/email.dart';
 import '../../services/gmail_service.dart';
 import '../../services/gemini_service.dart';
+import '../../services/deepgram_service.dart';
+import '../../services/sound_service.dart';
 import '../compose/compose_view.dart';
 
 /// Full email detail view with AI summary, translate, TTS, smart replies
@@ -23,6 +25,8 @@ class _EmailDetailViewState extends State<EmailDetailView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final GeminiService _gemini = GeminiService();
+  final DeepgramService _deepgram = DeepgramService();
+  final SoundService _sound = SoundService();
   bool _isLoadingSummary = false;
   bool _isTranslating = false;
   String? _translatedBody;
@@ -30,6 +34,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
 
   // TTS
   bool _isPlaying = false;
+  bool _isGeneratingAudio = false;
 
   @override
   void initState() {
@@ -122,6 +127,13 @@ class _EmailDetailViewState extends State<EmailDetailView>
                       _buildSenderCard(),
                       const SizedBox(height: 16),
 
+                      // Divider
+                      Container(
+                        height: 0.5,
+                        color: VoidColors.border,
+                      ),
+                      const SizedBox(height: 16),
+
                       // AI Summary
                       AISummaryCard(
                         summary: widget.email.aiSummary,
@@ -137,9 +149,11 @@ class _EmailDetailViewState extends State<EmailDetailView>
                       // Email body
                       Text(
                         _translatedBody ?? widget.email.body,
-                        style: Typo.body.copyWith(
-                          height: 1.8,
-                          color: VoidColors.textPrimary,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: VoidColors.textSecondary,
+                          height: 1.4,
                         ),
                       ),
 
@@ -184,6 +198,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
             onPressed: () {
               final gmail = context.read<GmailService>();
               gmail.toggleStar(widget.email.id);
+              _sound.playStarSound();
               setState(() {});
             },
             icon: Icon(
@@ -196,6 +211,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
           IconButton(
             onPressed: () {
               context.read<GmailService>().archiveEmail(widget.email.id);
+              _sound.playDeleteSound();
               Navigator.pop(context);
             },
             icon: const Icon(
@@ -206,6 +222,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
           IconButton(
             onPressed: () {
               context.read<GmailService>().deleteEmail(widget.email.id);
+              _sound.playDeleteSound();
               Navigator.pop(context);
             },
             icon: const Icon(
@@ -220,12 +237,13 @@ class _EmailDetailViewState extends State<EmailDetailView>
 
   Widget _buildSenderCard() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InitialsAvatar(
           name: widget.email.from.displayName,
-          size: 44,
+          size: 48,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,7 +254,16 @@ class _EmailDetailViewState extends State<EmailDetailView>
               ),
               Text(
                 widget.email.from.email,
-                style: Typo.monoSmall,
+                style: Typo.mono.copyWith(
+                  color: VoidColors.textTertiary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'TO ME',
+                style: Typo.metaLabel.copyWith(
+                  color: VoidColors.textTertiary,
+                ),
               ),
             ],
           ),
@@ -271,26 +298,25 @@ class _EmailDetailViewState extends State<EmailDetailView>
               .toList(),
           onSelected: _translateEmail,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: VoidColors.bgCard,
+              color: VoidColors.accentPink.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: VoidColors.border, width: 0.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  _isTranslating ? Icons.hourglass_top : Icons.translate,
+                  _isTranslating ? Icons.hourglass_top : Icons.language,
                   size: 16,
-                  color: VoidColors.accentSkyBlue,
+                  color: VoidColors.accentPink,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _isTranslating ? 'Translating...' : 'Translate',
-                  style: Typo.subhead.copyWith(
+                  _isTranslating ? 'TRANSLATING...' : 'AI TRANSLATE',
+                  style: Typo.mono.copyWith(
                     fontSize: 13,
-                    color: VoidColors.accentSkyBlue,
+                    color: VoidColors.accentPink,
                   ),
                 ),
               ],
@@ -300,40 +326,29 @@ class _EmailDetailViewState extends State<EmailDetailView>
 
         const SizedBox(width: 8),
 
-        // Listen button (TTS)
+        // Listen button (TTS via Deepgram)
         GestureDetector(
-          onTap: () {
-            setState(() => _isPlaying = !_isPlaying);
-            // Simulated TTS progress
-            if (_isPlaying) {
-              _simulatePlayback();
-            }
-          },
+          onTap: _toggleTTS,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: VoidColors.bgCard,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: VoidColors.border, width: 0.5),
+              color: VoidColors.accentGreen.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _isPlaying ? Icons.pause : Icons.volume_up,
-                  size: 16,
-                  color: VoidColors.accentGreen,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _isPlaying ? 'Playing...' : 'Listen',
-                  style: Typo.subhead.copyWith(
-                    fontSize: 13,
+            child: _isGeneratingAudio
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: VoidColors.accentGreen,
+                    ),
+                  )
+                : Icon(
+                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                    size: 22,
                     color: VoidColors.accentGreen,
                   ),
-                ),
-              ],
-            ),
           ),
         ),
 
@@ -362,13 +377,46 @@ class _EmailDetailViewState extends State<EmailDetailView>
     );
   }
 
-  void _simulatePlayback() async {
-    for (int i = 0; i <= 100; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted || !_isPlaying) return;
-      setState(() {});
+  /// Toggle text-to-speech playback using Deepgram
+  Future<void> _toggleTTS() async {
+    if (_isPlaying) {
+      await _deepgram.pause();
+      setState(() => _isPlaying = false);
+      return;
     }
-    if (mounted) setState(() => _isPlaying = false);
+
+    // Check for cached audio
+    final cachedPath = _deepgram.cachedPath(widget.email.id);
+    if (cachedPath != null) {
+      await _deepgram.play(cachedPath);
+      setState(() => _isPlaying = true);
+      // Listen for playback completion
+      _deepgram.addListener(_onTTSStateChanged);
+      return;
+    }
+
+    // Generate audio
+    setState(() => _isGeneratingAudio = true);
+    final path = await _deepgram.generateAudio(
+      emailId: widget.email.id,
+      text: widget.email.body,
+    );
+
+    if (mounted && path != null) {
+      setState(() => _isGeneratingAudio = false);
+      await _deepgram.play(path);
+      setState(() => _isPlaying = true);
+      _deepgram.addListener(_onTTSStateChanged);
+    } else if (mounted) {
+      setState(() => _isGeneratingAudio = false);
+    }
+  }
+
+  void _onTTSStateChanged() {
+    if (mounted && !_deepgram.isPlaying && _isPlaying) {
+      setState(() => _isPlaying = false);
+      _deepgram.removeListener(_onTTSStateChanged);
+    }
   }
 
   Widget _buildAttachments() {
@@ -380,52 +428,41 @@ class _EmailDetailViewState extends State<EmailDetailView>
           style: Typo.metaLabel,
         ),
         const SizedBox(height: 12),
-        ...widget.email.attachments.map((attachment) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: VoidCard(
-                padding: const EdgeInsets.all(14),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: widget.email.attachments.map((attachment) {
+              return Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: VoidColors.bgCard,
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: VoidColors.bgSurface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        attachment.icon,
-                        size: 20,
-                        color: VoidColors.accentSkyBlue,
-                      ),
+                    Icon(
+                      attachment.icon,
+                      size: 16,
+                      color: VoidColors.accentSkyBlue,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            attachment.name,
-                            style: Typo.body.copyWith(fontSize: 14),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            attachment.formattedSize,
-                            style: Typo.monoSmall,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(width: 8),
+                    Text(
+                      attachment.name,
+                      style: Typo.subhead.copyWith(fontSize: 13),
                     ),
-                    const Icon(
-                      Icons.download,
-                      size: 20,
-                      color: VoidColors.textTertiary,
+                    const SizedBox(width: 4),
+                    Text(
+                      attachment.formattedSize,
+                      style: Typo.monoSmall,
                     ),
                   ],
                 ),
-              ),
-            )),
+              );
+            }).toList(),
+          ),
+        ),
       ],
     );
   }
@@ -451,27 +488,33 @@ class _EmailDetailViewState extends State<EmailDetailView>
           ],
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _smartReplies.map((reply) {
-            return GestureDetector(
-              onTap: () => _openCompose(reply),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: VoidColors.bgCard,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: VoidColors.border, width: 0.5),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: _smartReplies.map((reply) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => _openCompose(reply),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: VoidColors.accentSkyBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      reply,
+                      style: Typo.subhead.copyWith(
+                        fontSize: 13,
+                        color: VoidColors.accentSkyBlue,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Text(
-                  reply,
-                  style: Typo.subhead.copyWith(fontSize: 13),
-                ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
@@ -479,7 +522,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
 
   Widget _buildBottomBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       color: VoidColors.bgDeep,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -487,30 +530,61 @@ class _EmailDetailViewState extends State<EmailDetailView>
           _buildActionButton(
             Icons.reply,
             'Reply',
+            VoidColors.accentSkyBlue,
             () => _openCompose(null, mode: ComposeMode.reply),
           ),
           _buildActionButton(
             Icons.reply_all,
             'Reply All',
+            VoidColors.accentGreen,
             () => _openCompose(null, mode: ComposeMode.replyAll),
           ),
           _buildActionButton(
             Icons.forward,
             'Forward',
+            VoidColors.accentPink,
             () => _openCompose(null, mode: ComposeMode.forward),
+          ),
+          _buildActionButton(
+            widget.email.isStarred ? Icons.star : Icons.star_border,
+            'Star',
+            VoidColors.textSecondary,
+            () {
+              context.read<GmailService>().toggleStar(widget.email.id);
+              setState(() {});
+            },
+          ),
+          _buildActionButton(
+            Icons.archive_outlined,
+            'Archive',
+            VoidColors.textSecondary,
+            () {
+              context.read<GmailService>().archiveEmail(widget.email.id);
+              Navigator.pop(context);
+            },
+          ),
+          _buildActionButton(
+            Icons.delete_outline,
+            'Delete',
+            VoidColors.textSecondary,
+            () {
+              context.read<GmailService>().deleteEmail(widget.email.id);
+              Navigator.pop(context);
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionButton(
+      IconData icon, String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 22, color: VoidColors.textSecondary),
+          Icon(icon, size: 20, color: color),
           const SizedBox(height: 4),
           Text(label, style: Typo.caption),
         ],

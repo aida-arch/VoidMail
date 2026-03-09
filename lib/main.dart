@@ -9,6 +9,7 @@ import 'services/gmail_service.dart';
 import 'services/calendar_service.dart';
 import 'services/notification_service.dart';
 import 'services/background_task_handler.dart';
+import 'services/in_app_notification_manager.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/content_view.dart';
 import 'views/lock/lock_screen_view.dart';
@@ -55,6 +56,7 @@ class VoidMailApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => GmailService()),
         ChangeNotifierProvider(create: (_) => CalendarService()),
+        ChangeNotifierProvider(create: (_) => InAppNotificationManager()),
       ],
       child: MaterialApp(
         title: 'VoidMail',

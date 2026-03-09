@@ -6,12 +6,14 @@ import '../design_system/components.dart';
 import '../models/calendar_event.dart';
 import '../services/calendar_service.dart';
 import '../services/notification_service.dart';
+import '../services/in_app_notification_manager.dart';
 import 'inbox/inbox_view.dart';
 import 'calendar/calendar_tab_view.dart';
 import 'search/search_view.dart';
 import 'settings/settings_view.dart';
 import 'compose/compose_view.dart';
 import 'ai/helix_o1_view.dart';
+import 'shared/in_app_notification_banner.dart';
 
 /// Main tab container with bottom nav, FAB, and tab transitions
 class ContentView extends StatefulWidget {
@@ -23,6 +25,8 @@ class ContentView extends StatefulWidget {
 
 class _ContentViewState extends State<ContentView> {
   int _selectedTab = 0;
+  final InAppNotificationManager _notificationManager =
+      InAppNotificationManager();
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +60,15 @@ class _ContentViewState extends State<ContentView> {
                 selectedIndex: _selectedTab,
                 onTap: (index) => setState(() => _selectedTab = index),
               ),
+            ),
+
+            // In-app notification banner overlay
+            InAppNotificationBanner(
+              manager: _notificationManager,
+              onTap: (emailId) {
+                // Navigate to inbox tab when banner tapped
+                setState(() => _selectedTab = 0);
+              },
             ),
           ],
         ),

@@ -5,6 +5,8 @@ import '../../design_system/typography.dart';
 import '../../design_system/components.dart';
 import '../../models/account.dart';
 import '../../services/auth_service.dart';
+import 'encryption_view.dart';
+import 'about_view.dart';
 
 /// Settings with accounts, preferences, signatures, privacy
 class SettingsView extends StatefulWidget {
@@ -43,8 +45,14 @@ class _SettingsViewState extends State<SettingsView> {
         children: [
           // Header
           ScreenHeader(
-            metaLabel: 'PREFERENCES',
+            metaLabel: 'VOIDMAIL',
             title: 'SETTINGS',
+            trailing: [
+              Text(
+                'BUILD: 1.1',
+                style: Typo.metaLabel,
+              ),
+            ],
           ),
 
           // Accounts section
@@ -87,6 +95,17 @@ class _SettingsViewState extends State<SettingsView> {
             value: _readReceipts,
             onChanged: (v) => setState(() => _readReceipts = v),
           ),
+          // Encryption settings link
+          _buildNavigationRow(
+            icon: Icons.enhanced_encryption,
+            label: 'Encryption',
+            subtitle: 'End-to-end encryption settings',
+            color: VoidColors.accentGreen,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EncryptionView()),
+            ),
+          ),
 
           // Appearance
           const SectionDivider(label: 'APPEARANCE'),
@@ -95,6 +114,17 @@ class _SettingsViewState extends State<SettingsView> {
           // About
           const SectionDivider(label: 'ABOUT'),
           _buildAboutSection(),
+          const SizedBox(height: 8),
+          _buildNavigationRow(
+            icon: Icons.info_outline,
+            label: 'About VoidMail',
+            subtitle: 'Version, features, and credits',
+            color: VoidColors.accentSkyBlue,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutView()),
+            ),
+          ),
 
           // Sign out
           if (auth.isSignedIn) ...[
@@ -375,6 +405,62 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
+  Widget _buildNavigationRow({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: VoidColors.bgCard,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 16, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: Typo.body.copyWith(fontSize: 15)),
+                    Text(
+                      subtitle,
+                      style: Typo.subhead.copyWith(
+                        fontSize: 12,
+                        color: VoidColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: VoidColors.textTertiary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSignOutButton(AuthService auth) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -425,7 +511,6 @@ class _SettingsViewState extends State<SettingsView> {
               'Sign Out',
               style: Typo.body.copyWith(
                 color: VoidColors.accentPink,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),

@@ -79,7 +79,7 @@ class FilterChipBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isActive ? VoidColors.textPrimary : VoidColors.border,
-                  width: 1,
+                  width: 0.5,
                 ),
               ),
               child: Text(
@@ -254,8 +254,8 @@ class _MonochromeFABState extends State<MonochromeFAB>
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           child: Container(
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: widget.color,
               shape: BoxShape.circle,
@@ -269,8 +269,8 @@ class _MonochromeFABState extends State<MonochromeFAB>
             ),
             child: Icon(
               widget.icon,
-              color: VoidColors.textInverse,
-              size: 24,
+              color: VoidColors.bgDeep,
+              size: 20,
             ),
           ),
         ),
@@ -300,12 +300,11 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(40, 0, 40, 30),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(40, 0, 40, 28),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: VoidColors.bgSurface,
+        color: VoidColors.bgCard,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: VoidColors.border, width: 0.5),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -317,26 +316,29 @@ class BottomNavBar extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
+              curve: Curves.easeOutBack,
               padding: EdgeInsets.symmetric(
                 horizontal: isSelected ? 20 : 16,
                 vertical: 10,
               ),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? VoidColors.textPrimary
+                    ? VoidColors.textPrimary.withValues(alpha: 0.12)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  isSelected ? item.activeIcon : item.icon,
-                  key: ValueKey('${item.label}_$isSelected'),
-                  color: isSelected
-                      ? VoidColors.textInverse
-                      : VoidColors.textSecondary.withValues(alpha: 0.4),
-                  size: 22,
+                child: Transform.scale(
+                  scale: isSelected ? 1.05 : 1.0,
+                  child: Icon(
+                    isSelected ? item.activeIcon : item.icon,
+                    key: ValueKey('${item.label}_$isSelected'),
+                    color: isSelected
+                        ? VoidColors.textPrimary
+                        : VoidColors.textPrimary.withValues(alpha: 0.4),
+                    size: 20,
+                  ),
                 ),
               ),
             ),
@@ -382,8 +384,8 @@ class InitialsAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? VoidColors.bgDeep,
-        borderRadius: BorderRadius.circular(size * 0.25),
+        color: backgroundColor ?? VoidColors.bgCardHover,
+        borderRadius: BorderRadius.circular(size * 0.2),
       ),
       child: Center(
         child: Text(
@@ -903,79 +905,4 @@ class ShimmerEmailRow extends StatelessWidget {
   }
 }
 
-/// In-App Notification Banner
-class InAppNotificationBanner extends StatelessWidget {
-  final String senderName;
-  final String subject;
-  final String snippet;
-  final VoidCallback? onTap;
-  final VoidCallback? onDismiss;
-
-  const InAppNotificationBanner({
-    super.key,
-    required this.senderName,
-    required this.subject,
-    required this.snippet,
-    this.onTap,
-    this.onDismiss,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: VoidColors.bgSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: VoidColors.border, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.mail_outline, color: VoidColors.accentGreen, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    senderName,
-                    style: Typo.headline.copyWith(fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subject,
-                    style: Typo.subhead.copyWith(fontSize: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            if (onDismiss != null)
-              GestureDetector(
-                onTap: onDismiss,
-                child: const Icon(
-                  Icons.close,
-                  size: 16,
-                  color: VoidColors.textTertiary,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// InAppNotificationBanner moved to lib/views/shared/in_app_notification_banner.dart

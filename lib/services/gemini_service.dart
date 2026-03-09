@@ -121,4 +121,67 @@ class GeminiService {
       return null;
     }
   }
+
+  /// Generate an email subject from the body content using AI
+  Future<String?> generateEmailSubject({required String body}) async {
+    try {
+      final response = await _backend.post('/api/helix/chat', body: {
+        'message':
+            'Generate a concise email subject line (max 8 words) for this email body. Return ONLY the subject line, no quotes or extra text:\n\n$body',
+      });
+      final reply = response['reply'] as String?;
+      if (reply != null) {
+        // Clean up any quotes or prefixes
+        return reply
+            .replaceAll('"', '')
+            .replaceAll("'", '')
+            .replaceAll('Subject: ', '')
+            .trim();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error generating subject: $e');
+      return null;
+    }
+  }
+
+  /// Categorize an email (primary, updates, newsletters, etc.)
+  Future<String?> categorizeEmail({
+    required String subject,
+    required String body,
+    required String from,
+  }) async {
+    try {
+      final response = await _backend.post('/api/helix/chat', body: {
+        'message':
+            'Categorize this email into one of: primary, updates, newsletters, promotions. '
+                'Return ONLY the category word.\n'
+                'From: $from\nSubject: $subject\nBody: ${body.length > 200 ? body.substring(0, 200) : body}',
+      });
+      return response['reply'] as String?;
+    } catch (e) {
+      debugPrint('Error categorizing: $e');
+      return null;
+    }
+  }
+
+  /// Check if an email is high priority
+  Future<bool> isEmailPriority({
+    required String subject,
+    required String body,
+    required String from,
+  }) async {
+    try {
+      final response = await _backend.post('/api/helix/chat', body: {
+        'message':
+            'Is this email high priority (requires urgent action)? Reply ONLY "yes" or "no".\n'
+                'From: $from\nSubject: $subject\nBody: ${body.length > 200 ? body.substring(0, 200) : body}',
+      });
+      final reply = (response['reply'] as String? ?? '').toLowerCase().trim();
+      return reply.contains('yes');
+    } catch (e) {
+      debugPrint('Error checking priority: $e');
+      return false;
+    }
+  }
 }

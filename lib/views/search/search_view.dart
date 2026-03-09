@@ -97,8 +97,14 @@ class _SearchViewState extends State<SearchView> {
       children: [
         // Header
         ScreenHeader(
-          metaLabel: '${gmail.emails.length} EMAILS',
+          metaLabel: 'INDEX 01',
           title: 'SEARCH',
+          trailing: [
+            Text(
+              '${gmail.emails.length} TOTAL',
+              style: Typo.metaLabel,
+            ),
+          ],
         ),
 
         // Search field
@@ -119,11 +125,10 @@ class _SearchViewState extends State<SearchView> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: VoidColors.bgCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: VoidColors.border, width: 0.5),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
@@ -132,7 +137,7 @@ class _SearchViewState extends State<SearchView> {
               size: 20,
               color: VoidColors.textTertiary,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: TextField(
                 controller: _searchController,
@@ -169,6 +174,11 @@ class _SearchViewState extends State<SearchView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Recent tags
+          Text(
+            'RECENT',
+            style: Typo.sectionLabel,
+          ),
+          const SizedBox(height: 8),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -272,8 +282,9 @@ class _SearchViewState extends State<SearchView> {
           children: [
             Text(
               value,
-              style: Typo.title3.copyWith(
-                fontSize: 20,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
