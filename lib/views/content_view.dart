@@ -25,6 +25,7 @@ class _ContentViewState extends State<ContentView> {
     return Scaffold(
       backgroundColor: VoidColors.bgDeep,
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [
             // Tab content with crossfade transition
@@ -38,7 +39,7 @@ class _ContentViewState extends State<ContentView> {
             // FAB
             Positioned(
               right: 20,
-              bottom: 90,
+              bottom: 110,
               child: _buildFAB(),
             ),
 
@@ -46,7 +47,7 @@ class _ContentViewState extends State<ContentView> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 0,
+              bottom: 4,
               child: BottomNavBar(
                 selectedIndex: _selectedTab,
                 onTap: (index) => setState(() => _selectedTab = index),

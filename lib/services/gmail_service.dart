@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/email.dart';
 import 'backend_service.dart';
+import 'notification_service.dart';
 
 /// Gmail API Service - Fetches, sends, and modifies emails
 class GmailService extends ChangeNotifier {
@@ -58,6 +60,7 @@ class GmailService extends ChangeNotifier {
       }).toList();
 
       _emails.sort((a, b) => b.date.compareTo(a.date));
+      await _persistKnownIds();
 
       _isLoading = false;
       notifyListeners();
@@ -93,6 +96,16 @@ class GmailService extends ChangeNotifier {
       if (newEmails.isNotEmpty) {
         _emails.insertAll(0, newEmails);
         _emails.sort((a, b) => b.date.compareTo(a.date));
+
+        final notificationService = NotificationService();
+        for (final email in newEmails) {
+          notificationService.showEmailNotification(
+            emailId: email.id,
+            senderName: email.from.displayName,
+            subject: email.subject,
+          );
+        }
+        await _persistKnownIds();
       }
 
       _isSyncing = false;
@@ -377,6 +390,18 @@ class GmailService extends ChangeNotifier {
         category: EmailCategory.updates,
       ),
     ];
+  }
+
+  Future<void> _persistKnownIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+        'voidmail_known_email_ids', _knownEmailIds.toList());
+  }
+
+  Future<void> loadKnownIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList('voidmail_known_email_ids');
+    if (ids != null) _knownEmailIds.addAll(ids);
   }
 
   @override

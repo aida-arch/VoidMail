@@ -382,7 +382,7 @@ class InitialsAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? VoidColors.bgCardHover,
+        color: backgroundColor ?? VoidColors.bgDeep,
         borderRadius: BorderRadius.circular(size * 0.25),
       ),
       child: Center(

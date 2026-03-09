@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 import 'design_system/theme.dart';
 import 'services/auth_service.dart';
 import 'services/gmail_service.dart';
 import 'services/calendar_service.dart';
+import 'services/notification_service.dart';
+import 'services/background_task_handler.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/content_view.dart';
 import 'views/lock/lock_screen_view.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize notifications
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+  await notificationService.requestPermissions();
+
+  // Initialize background task manager
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  await Workmanager().registerPeriodicTask(
+    'emailCheckTask',
+    emailCheckTaskName,
+    frequency: const Duration(minutes: 15),
+    constraints: Constraints(networkType: NetworkType.connected),
+    existingWorkPolicy: ExistingWorkPolicy.keep,
+  );
 
   // Set system UI for dark mode
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(

@@ -515,12 +515,7 @@ class _HelixO1ViewState extends State<HelixO1View>
   Widget _buildChatInput() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: const BoxDecoration(
-        color: VoidColors.bgSurface,
-        border: Border(
-          top: BorderSide(color: VoidColors.border, width: 0.5),
-        ),
-      ),
+      color: VoidColors.bgDeep,
       child: Row(
         children: [
           Expanded(

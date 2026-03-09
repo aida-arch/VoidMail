@@ -300,11 +300,14 @@ class _SettingsViewState extends State<SettingsView> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.palette, size: 20, color: VoidColors.textSecondary),
+          const Icon(Icons.palette, size: 16, color: VoidColors.textSecondary),
           const SizedBox(width: 12),
           Text('Theme', style: Typo.body),
-          const Spacer(),
-          SegmentedButton<String>(
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: SegmentedButton<String>(
+            showSelectedIcon: false,
             segments: const [
               ButtonSegment(value: 'dark', label: Text('Dark')),
               ButtonSegment(value: 'light', label: Text('Light')),
@@ -329,6 +332,7 @@ class _SettingsViewState extends State<SettingsView> {
               side: WidgetStateProperty.all(
                 const BorderSide(color: VoidColors.border, width: 0.5),
               ),
+            ),
             ),
           ),
         ],
