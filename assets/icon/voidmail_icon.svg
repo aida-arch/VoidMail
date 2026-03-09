@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Gold gradient for the letter/paper -->
+    <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D4B96A"/>
+      <stop offset="50%" stop-color="#C5A55A"/>
+      <stop offset="100%" stop-color="#B8944A"/>
+    </linearGradient>
+    <!-- Subtle highlight gradient for envelope flap -->
+    <linearGradient id="flapGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#353535"/>
+      <stop offset="100%" stop-color="#2A2A2A"/>
+    </linearGradient>
+    <!-- Background gradient -->
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2D2D2D"/>
+      <stop offset="100%" stop-color="#1E1E1E"/>
+    </linearGradient>
+    <!-- Envelope body gradient -->
+    <linearGradient id="envelopeGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2A2A2A"/>
+      <stop offset="100%" stop-color="#222222"/>
+    </linearGradient>
+    <!-- Shadow filter -->
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="innerShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+    <!-- Gold letter shadow -->
+    <filter id="letterShadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded rectangle (iOS superellipse approximation) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="url(#bgGradient)"/>
+
+  <!-- Envelope body -->
+  <g filter="url(#dropShadow)">
+    <!-- Main envelope body rectangle -->
+    <path d="M200,380 L200,700 Q200,730 230,730 L794,730 Q824,730 824,700 L824,380 Z" fill="url(#envelopeGradient)"/>
+
+    <!-- Gold letter/paper visible inside -->
+    <g filter="url(#letterShadow)">
+      <path d="M270,360 L754,360 Q770,360 770,376 L770,520 L254,520 L254,376 Q254,360 270,360 Z" fill="url(#goldGradient)"/>
+      <!-- Dark line across the letter (fold/content line) -->
+      <rect x="340" y="430" width="344" height="4" rx="2" fill="#8B7A3D" opacity="0.6"/>
+      <!-- Second subtle line -->
+      <rect x="380" y="450" width="264" height="3" rx="1.5" fill="#8B7A3D" opacity="0.35"/>
+    </g>
+
+    <!-- Envelope flap (top triangle) -->
+    <path d="M200,380 L512,570 L824,380 L824,395 L512,590 L200,395 Z" fill="#2E2E2E"/>
+    <path d="M200,380 L512,570 L824,380" fill="url(#flapGradient)" stroke="#3A3A3A" stroke-width="1" opacity="0.9"/>
+
+    <!-- Bottom envelope fold lines for depth -->
+    <path d="M200,730 L420,580" stroke="#1A1A1A" stroke-width="1.5" opacity="0.3"/>
+    <path d="M824,730 L604,580" stroke="#1A1A1A" stroke-width="1.5" opacity="0.3"/>
+  </g>
+
+  <!-- VOID MAIL text -->
+  <text x="512" y="820" text-anchor="middle" font-family="'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="52" font-weight="500" letter-spacing="14" fill="#8A8070" opacity="0.9">VOID MAIL</text>
+</svg>
