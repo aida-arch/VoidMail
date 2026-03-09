@@ -16,6 +16,8 @@ class CalendarEvent {
   final String? accountEmail;
   final String? organizerEmail;
   final List<String> attendees;
+  final String? description;
+  final int? reminderMinutes;
 
   CalendarEvent({
     required this.id,
@@ -30,7 +32,47 @@ class CalendarEvent {
     this.accountEmail,
     this.organizerEmail,
     this.attendees = const [],
+    this.description,
+    this.reminderMinutes,
   });
+
+  String? get colorId {
+    if (color == VoidColors.accentSkyBlue) return '1';
+    if (color == VoidColors.accentGreen) return '2';
+    if (color == const Color(0xFF9966CC)) return '3';
+    if (color == VoidColors.accentPink) return '4';
+    if (color == VoidColors.accentYellow) return '5';
+    return null;
+  }
+
+  CalendarEvent copyWith({
+    String? title,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? location,
+    String? meetingLink,
+    Color? color,
+    String? description,
+    List<String>? attendees,
+    int? reminderMinutes,
+  }) {
+    return CalendarEvent(
+      id: id,
+      title: title ?? this.title,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      location: location ?? this.location,
+      meetingLink: meetingLink ?? this.meetingLink,
+      color: color ?? this.color,
+      calendarName: calendarName,
+      linkedEmailId: linkedEmailId,
+      accountEmail: accountEmail,
+      organizerEmail: organizerEmail,
+      attendees: attendees ?? this.attendees,
+      description: description ?? this.description,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+    );
+  }
 
   String get duration {
     final diff = endDate.difference(startDate);
@@ -94,7 +136,19 @@ class CalendarEvent {
               ?.map((a) => a['email'] as String)
               .toList() ??
           [],
+      description: json['description'],
+      reminderMinutes: _parseReminder(json),
     );
+  }
+
+  static int? _parseReminder(Map<String, dynamic> json) {
+    final reminders = json['reminders'];
+    if (reminders == null) return null;
+    final overrides = reminders['overrides'] as List?;
+    if (overrides != null && overrides.isNotEmpty) {
+      return overrides.first['minutes'] as int?;
+    }
+    return null;
   }
 
   static DateTime _parseDate(dynamic dateObj) {

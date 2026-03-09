@@ -169,18 +169,22 @@ class _SearchViewState extends State<SearchView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Recent tags
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _recentTags.map((tag) {
-              return TagChip(
-                label: tag.$1,
-                icon: tag.$2,
-                onTap: () {
-                  _searchController.text = tag.$1.toLowerCase();
-                },
-              );
-            }).toList(),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _recentTags.map((tag) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: TagChip(
+                    label: tag.$1,
+                    icon: tag.$2,
+                    onTap: () {
+                      _searchController.text = tag.$1.toLowerCase();
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
           ),
 
           const SizedBox(height: 24),

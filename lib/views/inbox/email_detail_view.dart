@@ -480,12 +480,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
   Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-      decoration: const BoxDecoration(
-        color: VoidColors.bgSurface,
-        border: Border(
-          top: BorderSide(color: VoidColors.border, width: 0.5),
-        ),
-      ),
+      color: VoidColors.bgDeep,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [

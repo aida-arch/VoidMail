@@ -6,6 +6,7 @@ import '../../design_system/typography.dart';
 import '../../design_system/components.dart';
 import '../../models/calendar_event.dart';
 import '../../services/calendar_service.dart';
+import 'event_detail_sheet.dart';
 
 /// Calendar tab with monthly grid, event timeline, and event creation
 class CalendarTabView extends StatefulWidget {
@@ -209,22 +210,26 @@ class _CalendarTabViewState extends State<CalendarTabView> {
               final isCurrentMonth = date.month == _currentMonth.month;
               final isSelected = _isSameDay(date, _selectedDate);
               final isToday = _isToday(date);
-              final hasEvents = calendarService.events
-                  .any((e) => _isSameDay(e.startDate, date));
+              final dayEvents = calendarService.events
+                  .where((e) => _isSameDay(e.startDate, date))
+                  .toList();
+              final eventColors = dayEvents
+                  .map((e) => e.color)
+                  .toSet()
+                  .take(3)
+                  .toList();
 
               return Expanded(
                 child: GestureDetector(
                   onTap: () => setState(() => _selectedDate = date),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    height: 40,
+                    height: 44,
                     margin: const EdgeInsets.all(1),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? VoidColors.textPrimary
-                          : isToday
-                              ? VoidColors.bgCard
-                              : Colors.transparent,
+                      color: isToday
+                          ? VoidColors.bgCard
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -237,23 +242,27 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                             fontWeight: isToday || isSelected
                                 ? FontWeight.bold
                                 : FontWeight.w400,
-                            color: isSelected
-                                ? VoidColors.textInverse
-                                : isCurrentMonth
-                                    ? VoidColors.textPrimary
-                                    : VoidColors.textTertiary,
+                            color: isCurrentMonth
+                                ? VoidColors.textPrimary
+                                : VoidColors.textTertiary,
                           ),
                         ),
-                        if (hasEvents)
-                          Container(
-                            width: 4,
-                            height: 4,
-                            margin: const EdgeInsets.only(top: 2),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? VoidColors.textInverse
-                                  : VoidColors.accentPink,
-                              shape: BoxShape.circle,
+                        if (eventColors.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: eventColors.map((color) {
+                                return Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
                       ],
@@ -279,6 +288,14 @@ class _EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return VoidCard(
       padding: const EdgeInsets.all(16),
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => EventDetailSheet(event: event),
+        );
+      },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

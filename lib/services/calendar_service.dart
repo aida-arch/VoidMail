@@ -89,6 +89,9 @@ class CalendarService extends ChangeNotifier {
     required DateTime start,
     required DateTime end,
     String? location,
+    String? description,
+    String? colorId,
+    int? reminderMinutes,
     List<String>? attendees,
     bool addMeet = false,
   }) async {
@@ -98,15 +101,78 @@ class CalendarService extends ChangeNotifier {
         'start': start.toIso8601String(),
         'end': end.toIso8601String(),
         if (location != null) 'location': location,
-        if (attendees != null)
-          'attendees': attendees,
+        if (description != null) 'description': description,
+        if (colorId != null) 'colorId': colorId,
+        if (attendees != null) 'attendees': attendees,
         if (addMeet) 'conferenceRequest': true,
+        if (reminderMinutes != null)
+          'reminders': {
+            'useDefault': false,
+            'overrides': [
+              {'method': 'popup', 'minutes': reminderMinutes}
+            ],
+          },
       };
 
       await _backend.post('/api/calendar/events', body: body);
       return true;
     } catch (e) {
       debugPrint('Error creating event: $e');
+      return false;
+    }
+  }
+
+  /// Update an existing event
+  Future<bool> updateEvent({
+    required String eventId,
+    required String title,
+    required DateTime start,
+    required DateTime end,
+    String? location,
+    String? description,
+    String? colorId,
+    int? reminderMinutes,
+    List<String>? attendees,
+    bool addMeet = false,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'summary': title,
+        'start': start.toIso8601String(),
+        'end': end.toIso8601String(),
+        if (location != null) 'location': location,
+        if (description != null) 'description': description,
+        if (colorId != null) 'colorId': colorId,
+        if (attendees != null) 'attendees': attendees,
+        if (addMeet) 'conferenceRequest': true,
+        if (reminderMinutes != null)
+          'reminders': {
+            'useDefault': false,
+            'overrides': [
+              {'method': 'popup', 'minutes': reminderMinutes}
+            ],
+          },
+      };
+
+      await _backend.put('/api/calendar/events/$eventId', body: body);
+
+      // Update local cache
+      final index = _events.indexWhere((e) => e.id == eventId);
+      if (index != -1) {
+        _events[index] = _events[index].copyWith(
+          title: title,
+          startDate: start,
+          endDate: end,
+          location: location,
+          description: description,
+          reminderMinutes: reminderMinutes,
+        );
+        _events.sort((a, b) => a.startDate.compareTo(b.startDate));
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error updating event: $e');
       return false;
     }
   }

@@ -1,166 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../design_system/colors.dart';
-import '../design_system/typography.dart';
-import '../design_system/components.dart';
-import '../models/calendar_event.dart';
-import '../services/calendar_service.dart';
-import '../services/notification_service.dart';
-import 'inbox/inbox_view.dart';
-import 'calendar/calendar_tab_view.dart';
-import 'search/search_view.dart';
-import 'settings/settings_view.dart';
-import 'compose/compose_view.dart';
-import 'ai/helix_o1_view.dart';
+import '../../design_system/colors.dart';
+import '../../design_system/typography.dart';
+import '../../design_system/components.dart';
+import '../../models/calendar_event.dart';
+import '../../services/calendar_service.dart';
+import '../../services/notification_service.dart';
 
-/// Main tab container with bottom nav, FAB, and tab transitions
-class ContentView extends StatefulWidget {
-  const ContentView({super.key});
+class EditEventSheet extends StatefulWidget {
+  final CalendarEvent event;
+
+  const EditEventSheet({super.key, required this.event});
 
   @override
-  State<ContentView> createState() => _ContentViewState();
+  State<EditEventSheet> createState() => _EditEventSheetState();
 }
 
-class _ContentViewState extends State<ContentView> {
-  int _selectedTab = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: VoidColors.bgDeep,
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            // Tab content with crossfade transition
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              switchInCurve: Curves.easeInOut,
-              switchOutCurve: Curves.easeInOut,
-              child: _buildTabContent(),
-            ),
-
-            // FAB
-            Positioned(
-              right: 20,
-              bottom: 110,
-              child: _buildFAB(),
-            ),
-
-            // Bottom nav bar
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 4,
-              child: BottomNavBar(
-                selectedIndex: _selectedTab,
-                onTap: (index) => setState(() => _selectedTab = index),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabContent() {
-    switch (_selectedTab) {
-      case 0:
-        return InboxView(
-          key: const ValueKey('inbox'),
-          onHelixTap: _openHelix,
-        );
-      case 1:
-        return const CalendarTabView(key: ValueKey('calendar'));
-      case 2:
-        return const SearchView(key: ValueKey('search'));
-      case 3:
-        return const SettingsView(key: ValueKey('settings'));
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  Widget _buildFAB() {
-    // Pink compose for inbox, sand calendar button for calendar tab
-    if (_selectedTab == 0) {
-      return MonochromeFAB(
-        key: const ValueKey('inbox_fab'),
-        icon: Icons.edit,
-        color: VoidColors.accentPink,
-        onTap: _openCompose,
-      );
-    } else if (_selectedTab == 1) {
-      return MonochromeFAB(
-        key: const ValueKey('calendar_fab'),
-        icon: Icons.add,
-        color: VoidColors.accentSand,
-        onTap: _openCreateEvent,
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  void _openCompose() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const ComposeView(),
-    );
-  }
-
-  void _openHelix() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const HelixO1View(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.05),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
-              child: child,
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 350),
-      ),
-    );
-  }
-
-  void _openCreateEvent() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _CreateEventSheet(),
-    );
-  }
-}
-
-/// Create Event Bottom Sheet
-class _CreateEventSheet extends StatefulWidget {
-  @override
-  State<_CreateEventSheet> createState() => _CreateEventSheetState();
-}
-
-class _CreateEventSheetState extends State<_CreateEventSheet> {
-  final _titleController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  DateTime _startDate = DateTime.now().add(const Duration(hours: 1));
-  DateTime _endDate = DateTime.now().add(const Duration(hours: 2));
-  bool _addMeet = false;
-  Color _selectedColor = VoidColors.accentSkyBlue;
+class _EditEventSheetState extends State<EditEventSheet> {
+  late TextEditingController _titleController;
+  late TextEditingController _locationController;
+  late TextEditingController _descriptionController;
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late Color _selectedColor;
+  late bool _addMeet;
   int? _reminderMinutes;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.event.title);
+    _locationController =
+        TextEditingController(text: widget.event.location ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.event.description ?? '');
+    _startDate = widget.event.startDate;
+    _endDate = widget.event.endDate;
+    _selectedColor = widget.event.color;
+    _addMeet = widget.event.meetingLink != null;
+    _reminderMinutes = widget.event.reminderMinutes;
+  }
 
   @override
   void dispose() {
@@ -180,7 +60,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
       ),
       child: Column(
         children: [
-          // Handle
+          // Drag handle
           Container(
             margin: const EdgeInsets.only(top: 8),
             width: 36,
@@ -196,7 +76,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
             padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
             child: Row(
               children: [
-                Text('NEW EVENT', style: Typo.metaLabel),
+                Text('EDIT EVENT', style: Typo.metaLabel),
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -215,7 +95,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title (hero size)
+                  // Title
                   TextField(
                     controller: _titleController,
                     style: Typo.title2.copyWith(fontSize: 28),
@@ -265,14 +145,10 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                     style: Typo.body,
                     decoration: InputDecoration(
                       hintText: 'Add location',
-                      hintStyle: Typo.body.copyWith(
-                        color: VoidColors.textTertiary,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.location_on,
-                        size: 20,
-                        color: VoidColors.textSecondary,
-                      ),
+                      hintStyle:
+                          Typo.body.copyWith(color: VoidColors.textTertiary),
+                      prefixIcon: const Icon(Icons.location_on,
+                          size: 20, color: VoidColors.textSecondary),
                       border: InputBorder.none,
                     ),
                   ),
@@ -286,14 +162,10 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
                     maxLines: 3,
                     decoration: InputDecoration(
                       hintText: 'Add description',
-                      hintStyle: Typo.body.copyWith(
-                        color: VoidColors.textTertiary,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.notes,
-                        size: 20,
-                        color: VoidColors.textSecondary,
-                      ),
+                      hintStyle:
+                          Typo.body.copyWith(color: VoidColors.textTertiary),
+                      prefixIcon: const Icon(Icons.notes,
+                          size: 20, color: VoidColors.textSecondary),
                       border: InputBorder.none,
                     ),
                   ),
@@ -316,10 +188,10 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             child: VoidButton(
-              label: 'Create Event',
+              label: 'Save Changes',
               icon: Icons.check,
               isLoading: _isSaving,
-              onTap: _create,
+              onTap: _save,
             ),
           ),
         ],
@@ -411,53 +283,6 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
     );
   }
 
-  Future<void> _create() async {
-    if (_titleController.text.trim().isEmpty) return;
-
-    setState(() => _isSaving = true);
-
-    final colorId = CalendarEvent(
-      id: '',
-      title: '',
-      startDate: DateTime.now(),
-      endDate: DateTime.now(),
-      color: _selectedColor,
-    ).colorId;
-
-    final success =
-        await context.read<CalendarService>().createEvent(
-              title: _titleController.text.trim(),
-              start: _startDate,
-              end: _endDate,
-              location: _locationController.text.trim().isNotEmpty
-                  ? _locationController.text.trim()
-                  : null,
-              description: _descriptionController.text.trim().isNotEmpty
-                  ? _descriptionController.text.trim()
-                  : null,
-              colorId: colorId,
-              reminderMinutes: _reminderMinutes,
-              addMeet: _addMeet,
-            );
-
-    if (success && _reminderMinutes != null) {
-      NotificationService().scheduleEventReminder(
-        eventId: 'new_${DateTime.now().millisecondsSinceEpoch}',
-        title: _titleController.text.trim(),
-        timeRange:
-            '${_startDate.hour}:${_startDate.minute.toString().padLeft(2, '0')}',
-        eventStart: _startDate,
-        minutesBefore: _reminderMinutes!,
-      );
-    }
-
-    setState(() => _isSaving = false);
-
-    if (success && mounted) {
-      Navigator.pop(context);
-    }
-  }
-
   Widget _buildDateTimeRow(
       String label, DateTime date, ValueChanged<DateTime> onChanged) {
     return GestureDetector(
@@ -466,7 +291,7 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
         final picked = await showDatePicker(
           context: ctx,
           initialDate: date,
-          firstDate: DateTime.now(),
+          firstDate: DateTime.now().subtract(const Duration(days: 365)),
           lastDate: DateTime.now().add(const Duration(days: 365)),
           builder: (context, child) {
             return Theme(
@@ -518,5 +343,53 @@ class _CreateEventSheetState extends State<_CreateEventSheet> {
         ],
       ),
     );
+  }
+
+  Future<void> _save() async {
+    if (_titleController.text.trim().isEmpty) return;
+
+    setState(() => _isSaving = true);
+
+    final colorId = CalendarEvent(
+      id: '',
+      title: '',
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      color: _selectedColor,
+    ).colorId;
+
+    final success =
+        await context.read<CalendarService>().updateEvent(
+              eventId: widget.event.id,
+              title: _titleController.text.trim(),
+              start: _startDate,
+              end: _endDate,
+              location: _locationController.text.trim().isNotEmpty
+                  ? _locationController.text.trim()
+                  : null,
+              description: _descriptionController.text.trim().isNotEmpty
+                  ? _descriptionController.text.trim()
+                  : null,
+              colorId: colorId,
+              reminderMinutes: _reminderMinutes,
+              addMeet: _addMeet,
+            );
+
+    // Schedule reminder notification if set
+    if (success && _reminderMinutes != null) {
+      NotificationService().scheduleEventReminder(
+        eventId: widget.event.id,
+        title: _titleController.text.trim(),
+        timeRange: '${_startDate.hour}:${_startDate.minute.toString().padLeft(2, '0')}',
+        eventStart: _startDate,
+        minutesBefore: _reminderMinutes!,
+      );
+    }
+
+    setState(() => _isSaving = false);
+
+    if (success && mounted) {
+      Navigator.pop(context, true);
+    }
   }
 }

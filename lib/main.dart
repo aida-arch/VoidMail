@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'design_system/theme.dart';
 import 'services/auth_service.dart';
 import 'services/gmail_service.dart';
@@ -14,6 +15,9 @@ import 'views/lock/lock_screen_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize timezones for scheduled notifications
+  tz.initializeTimeZones();
 
   // Initialize notifications
   final notificationService = NotificationService();
