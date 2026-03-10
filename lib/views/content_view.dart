@@ -59,6 +59,7 @@ class _ContentViewState extends State<ContentView> {
               child: BottomNavBar(
                 selectedIndex: _selectedTab,
                 onTap: (index) => setState(() => _selectedTab = index),
+                onComposeTap: _openCompose,
               ),
             ),
 
@@ -95,15 +96,8 @@ class _ContentViewState extends State<ContentView> {
   }
 
   Widget _buildFAB() {
-    // Pink compose for inbox, sand calendar button for calendar tab
-    if (_selectedTab == 0) {
-      return MonochromeFAB(
-        key: const ValueKey('inbox_fab'),
-        icon: Icons.edit,
-        color: VoidColors.accentPink,
-        onTap: _openCompose,
-      );
-    } else if (_selectedTab == 1) {
+    // Compose moved to nav bar; keep calendar FAB as floating
+    if (_selectedTab == 1) {
       return MonochromeFAB(
         key: const ValueKey('calendar_fab'),
         icon: Icons.add,

@@ -105,7 +105,7 @@ class _EmailRowViewState extends State<EmailRowView>
                   child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: VoidColors.bgEmailRow,
+                    color: VoidColors.bgDeep,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

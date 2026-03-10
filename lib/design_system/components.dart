@@ -280,16 +280,24 @@ class _MonochromeFABState extends State<MonochromeFAB>
 }
 
 /// Bottom Nav Bar - Floating pill navigation with matched geometry
-class BottomNavBar extends StatelessWidget {
+class BottomNavBar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
+  final VoidCallback? onComposeTap;
 
   const BottomNavBar({
     super.key,
     required this.selectedIndex,
     required this.onTap,
+    this.onComposeTap,
   });
 
+  @override
+  State<BottomNavBar> createState() => _BottomNavBarState();
+}
+
+class _BottomNavBarState extends State<BottomNavBar>
+    with SingleTickerProviderStateMixin {
   static const _items = [
     _NavItem(Icons.inbox_outlined, Icons.inbox, 'Inbox'),
     _NavItem(Icons.calendar_today_outlined, Icons.calendar_today, 'Calendar'),
@@ -297,10 +305,35 @@ class BottomNavBar extends StatelessWidget {
     _NavItem(Icons.settings_outlined, Icons.settings, 'Settings'),
   ];
 
+  late AnimationController _composeController;
+  late Animation<double> _composeScale;
+  bool _composePressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _composeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _composeScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _composeController, curve: Curves.elasticOut),
+    );
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _composeController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _composeController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(40, 0, 40, 28),
+      margin: const EdgeInsets.fromLTRB(100, 60, 92, 40),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: VoidColors.bgCard,
@@ -308,42 +341,87 @@ class BottomNavBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(_items.length, (index) {
-          final item = _items[index];
-          final isSelected = index == selectedIndex;
-          return GestureDetector(
-            onTap: () => onTap(index),
-            behavior: HitTestBehavior.opaque,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? 20 : 16,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? VoidColors.textPrimary.withValues(alpha: 0.12)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Transform.scale(
-                  scale: isSelected ? 1.05 : 1.0,
-                  child: Icon(
-                    isSelected ? item.activeIcon : item.icon,
-                    key: ValueKey('${item.label}_$isSelected'),
-                    color: isSelected
-                        ? VoidColors.textPrimary
-                        : VoidColors.textPrimary.withValues(alpha: 0.4),
-                    size: 20,
+        children: [
+          // All 4 nav items
+          for (int index = 0; index < 4; index++)
+            _buildNavItem(index),
+
+          // Compose button on the right
+          if (widget.onComposeTap != null)
+            ScaleTransition(
+              scale: _composeScale,
+              child: GestureDetector(
+                onTapDown: (_) => setState(() => _composePressed = true),
+                onTapUp: (_) {
+                  setState(() => _composePressed = false);
+                  widget.onComposeTap!();
+                },
+                onTapCancel: () => setState(() => _composePressed = false),
+                child: AnimatedScale(
+                  scale: _composePressed ? 0.88 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: VoidColors.accentPink,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: VoidColors.accentPink.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.edit,
+                      color: VoidColors.bgDeep,
+                      size: 16,
+                    ),
                   ),
                 ),
               ),
             ),
-          );
-        }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index) {
+    final item = _items[index];
+    final isSelected = index == widget.selectedIndex;
+    return GestureDetector(
+      onTap: () => widget.onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 25 : 10,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? VoidColors.textPrimary.withValues(alpha: 0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Transform.scale(
+            scale: isSelected ? 1.05 : 1.0,
+            child: Icon(
+              isSelected ? item.activeIcon : item.icon,
+              key: ValueKey('${item.label}_$isSelected'),
+              color: isSelected
+                  ? VoidColors.textPrimary
+                  : VoidColors.textPrimary.withValues(alpha: 0.4),
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -384,7 +462,7 @@ class InitialsAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor ?? VoidColors.bgCardHover,
+        color: backgroundColor ?? VoidColors.bgDeep,
         borderRadius: BorderRadius.circular(size * 0.2),
       ),
       child: Center(

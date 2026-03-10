@@ -278,6 +278,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
 
   Widget _buildActionRow() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Translate menu
         PopupMenuButton<String>(
@@ -330,24 +331,37 @@ class _EmailDetailViewState extends State<EmailDetailView>
         GestureDetector(
           onTap: _toggleTTS,
           child: Container(
-            width: 44,
-            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: VoidColors.accentGreen.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(8),
             ),
             child: _isGeneratingAudio
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: VoidColors.accentGreen,
                     ),
                   )
-                : Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    size: 22,
-                    color: VoidColors.accentGreen,
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isPlaying ? Icons.pause : Icons.play_arrow,
+                        size: 16,
+                        color: VoidColors.accentGreen,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isPlaying ? 'PAUSE' : 'LISTEN TO MAIL',
+                        style: Typo.mono.copyWith(
+                          fontSize: 13,
+                          color: VoidColors.accentGreen,
+                        ),
+                      ),
+                    ],
                   ),
           ),
         ),

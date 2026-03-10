@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -25,15 +26,17 @@ void main() async {
   await notificationService.initialize();
   await notificationService.requestPermissions();
 
-  // Initialize background task manager
-  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
-  await Workmanager().registerPeriodicTask(
-    'emailCheckTask',
-    emailCheckTaskName,
-    frequency: const Duration(minutes: 15),
-    constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingWorkPolicy.keep,
-  );
+  // Initialize background task manager (Android only)
+  if (Platform.isAndroid) {
+    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+    await Workmanager().registerPeriodicTask(
+      'emailCheckTask',
+      emailCheckTaskName,
+      frequency: const Duration(minutes: 15),
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingWorkPolicy.keep,
+    );
+  }
 
   // Set system UI for dark mode
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(

@@ -232,12 +232,12 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: 36,
-                    height: 36,
+                    height: 44,
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? VoidColors.textPrimary
-                          : Colors.transparent,
+                          : VoidColors.bgDeep,
                       borderRadius: BorderRadius.circular(8),
                       border: (!isSelected && isToday)
                           ? Border.all(
@@ -273,9 +273,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                                   height: 5,
                                   margin: const EdgeInsets.symmetric(horizontal: 1),
                                   decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? VoidColors.textInverse
-                                        : color,
+                                    color: color,
                                     shape: BoxShape.circle,
                                   ),
                                 );
