@@ -184,4 +184,15 @@ class GeminiService {
       return false;
     }
   }
+
+  /// Check Helix AI service status
+  Future<bool> checkHelixStatus() async {
+    try {
+      final response = await _backend.helixStatus();
+      return response != null && response['status'] == 'ok';
+    } catch (e) {
+      debugPrint('Helix status check failed: $e');
+      return false;
+    }
+  }
 }

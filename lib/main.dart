@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'design_system/theme.dart';
@@ -11,6 +12,7 @@ import 'services/calendar_service.dart';
 import 'services/notification_service.dart';
 import 'services/background_task_handler.dart';
 import 'services/in_app_notification_manager.dart';
+import 'services/backend_service.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/content_view.dart';
 import 'views/lock/lock_screen_view.dart';
@@ -21,10 +23,14 @@ void main() async {
   // Initialize timezones for scheduled notifications
   tz.initializeTimeZones();
 
-  // Initialize notifications
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-  await notificationService.requestPermissions();
+  // Initialize notifications (wrapped in try-catch for real device safety)
+  try {
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    await notificationService.requestPermissions();
+  } catch (e) {
+    debugPrint('[VoidMail] Notification init failed: $e');
+  }
 
   // Initialize background task manager (Android only)
   if (Platform.isAndroid) {
@@ -49,6 +55,53 @@ void main() async {
   runApp(const VoidMailApp());
 }
 
+/// Theme mode notifier for persisted Dark/Light/System switching
+class ThemeModeNotifier extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.dark;
+
+  ThemeMode get themeMode => _themeMode;
+
+  ThemeModeNotifier() {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mode = prefs.getString('appearance_mode') ?? 'dark';
+    _themeMode = _modeFromString(mode);
+    notifyListeners();
+  }
+
+  Future<void> setMode(String mode) async {
+    _themeMode = _modeFromString(mode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('appearance_mode', mode);
+    notifyListeners();
+  }
+
+  String get modeString {
+    switch (_themeMode) {
+      case ThemeMode.dark:
+        return 'dark';
+      case ThemeMode.light:
+        return 'light';
+      case ThemeMode.system:
+        return 'system';
+    }
+  }
+
+  ThemeMode _modeFromString(String mode) {
+    switch (mode) {
+      case 'light':
+        return ThemeMode.light;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.dark;
+    }
+  }
+}
+
 class VoidMailApp extends StatelessWidget {
   const VoidMailApp({super.key});
 
@@ -60,12 +113,19 @@ class VoidMailApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GmailService()),
         ChangeNotifierProvider(create: (_) => CalendarService()),
         ChangeNotifierProvider(create: (_) => InAppNotificationManager()),
+        ChangeNotifierProvider(create: (_) => ThemeModeNotifier()),
       ],
-      child: MaterialApp(
-        title: 'VoidMail',
-        debugShowCheckedModeBanner: false,
-        theme: VoidTheme.darkTheme,
-        home: const _AppRoot(),
+      child: Consumer<ThemeModeNotifier>(
+        builder: (context, themeNotifier, _) {
+          return MaterialApp(
+            title: 'VoidMail',
+            debugShowCheckedModeBanner: false,
+            theme: VoidTheme.darkTheme,
+            darkTheme: VoidTheme.darkTheme,
+            themeMode: themeNotifier.themeMode,
+            home: const _AppRoot(),
+          );
+        },
       ),
     );
   }
@@ -80,6 +140,38 @@ class _AppRoot extends StatefulWidget {
 
 class _AppRootState extends State<_AppRoot> {
   bool _isLocked = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Wire up 401 auto-retry: connect BackendService to AuthService
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthService>();
+      final backend = BackendService();
+      backend.onTokenRefresh = () => auth.refreshAccessToken();
+
+      // Wire up notification actions
+      NotificationService.onNotificationAction = (action, emailId) {
+        if (emailId == null) return;
+        final gmail = context.read<GmailService>();
+        switch (action) {
+          case NotificationActions.archive:
+            gmail.archiveEmail(emailId);
+            break;
+          case NotificationActions.markRead:
+            gmail.toggleRead(emailId);
+            break;
+          case NotificationActions.reply:
+            // Reply opens the app — handled by pendingEmailId
+            NotificationService.pendingEmailId = emailId;
+            break;
+        }
+      };
+
+      // Clear badge when app opens
+      NotificationService().clearBadge();
+    });
+  }
 
   void _unlock() {
     setState(() => _isLocked = false);

@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../../design_system/colors.dart';
 import '../../design_system/typography.dart';
@@ -35,6 +38,10 @@ class _EmailDetailViewState extends State<EmailDetailView>
   // TTS
   bool _isPlaying = false;
   bool _isGeneratingAudio = false;
+
+  // Attachment download state
+  final Set<String> _downloadingAttachments = {};
+  final Map<String, String> _downloadedPaths = {};
 
   @override
   void initState() {
@@ -433,6 +440,49 @@ class _EmailDetailViewState extends State<EmailDetailView>
     }
   }
 
+  /// Download an attachment and open it with native preview
+  Future<void> _downloadAndPreview(Attachment attachment) async {
+    if (_downloadingAttachments.contains(attachment.id)) return;
+
+    // If already downloaded, just open it
+    if (_downloadedPaths.containsKey(attachment.id)) {
+      await OpenFilex.open(_downloadedPaths[attachment.id]!);
+      return;
+    }
+
+    if (!attachment.isDownloadable) return;
+
+    setState(() => _downloadingAttachments.add(attachment.id));
+
+    try {
+      final gmail = context.read<GmailService>();
+      final bytes = await gmail.downloadAttachment(
+        messageId: attachment.messageId!,
+        attachmentId: attachment.attachmentId!,
+      );
+
+      if (bytes != null && mounted) {
+        // Save to temp directory
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/${attachment.name}');
+        await file.writeAsBytes(bytes);
+
+        _downloadedPaths[attachment.id] = file.path;
+        setState(() => _downloadingAttachments.remove(attachment.id));
+
+        // Open with native viewer
+        await OpenFilex.open(file.path);
+      } else if (mounted) {
+        setState(() => _downloadingAttachments.remove(attachment.id));
+      }
+    } catch (e) {
+      debugPrint('Error downloading attachment: $e');
+      if (mounted) {
+        setState(() => _downloadingAttachments.remove(attachment.id));
+      }
+    }
+  }
+
   Widget _buildAttachments() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,32 +496,55 @@ class _EmailDetailViewState extends State<EmailDetailView>
           scrollDirection: Axis.horizontal,
           child: Row(
             children: widget.email.attachments.map((attachment) {
-              return Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: VoidColors.bgCard,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      attachment.icon,
-                      size: 16,
-                      color: VoidColors.accentSkyBlue,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      attachment.name,
-                      style: Typo.subhead.copyWith(fontSize: 13),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      attachment.formattedSize,
-                      style: Typo.monoSmall,
-                    ),
-                  ],
+              final isDownloading = _downloadingAttachments.contains(attachment.id);
+              final isDownloaded = _downloadedPaths.containsKey(attachment.id);
+              return GestureDetector(
+                onTap: () => _downloadAndPreview(attachment),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: VoidColors.bgCard,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        attachment.icon,
+                        size: 16,
+                        color: VoidColors.accentSkyBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        attachment.name,
+                        style: Typo.subhead.copyWith(fontSize: 13),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        attachment.formattedSize,
+                        style: Typo.monoSmall,
+                      ),
+                      const SizedBox(width: 6),
+                      if (isDownloading)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: VoidColors.accentSkyBlue,
+                          ),
+                        )
+                      else
+                        Icon(
+                          isDownloaded ? Icons.check_circle : Icons.download,
+                          size: 14,
+                          color: isDownloaded
+                              ? VoidColors.accentGreen
+                              : VoidColors.textTertiary,
+                        ),
+                    ],
+                  ),
                 ),
               );
             }).toList(),

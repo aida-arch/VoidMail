@@ -5,6 +5,7 @@ import '../../design_system/typography.dart';
 import '../../design_system/components.dart';
 import '../../models/account.dart';
 import '../../services/auth_service.dart';
+import '../../main.dart';
 import 'encryption_view.dart';
 import 'about_view.dart';
 
@@ -21,7 +22,6 @@ class _SettingsViewState extends State<SettingsView> {
   bool _aiSummaries = true;
   bool _blockTrackers = true;
   bool _readReceipts = false;
-  String _appearance = 'dark';
 
   // Per-account signatures
   final Map<String, TextEditingController> _signatureControllers = {};
@@ -326,6 +326,7 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Widget _buildAppearancePicker() {
+    final themeNotifier = context.watch<ThemeModeNotifier>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
@@ -343,9 +344,8 @@ class _SettingsViewState extends State<SettingsView> {
               ButtonSegment(value: 'light', label: Text('Light')),
               ButtonSegment(value: 'system', label: Text('System')),
             ],
-            selected: {_appearance},
-            onSelectionChanged: (val) =>
-                setState(() => _appearance = val.first),
+            selected: {themeNotifier.modeString},
+            onSelectionChanged: (val) => themeNotifier.setMode(val.first),
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {

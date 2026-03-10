@@ -60,8 +60,14 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>VoidMail uses Face ID to securely unlock the app</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>file</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

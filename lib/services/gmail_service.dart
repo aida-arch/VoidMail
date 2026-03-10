@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/email.dart';
 import 'backend_service.dart';
+import 'gemini_service.dart';
 import 'notification_service.dart';
 import 'in_app_notification_manager.dart';
 
 /// Gmail API Service - Fetches, sends, and modifies emails
 class GmailService extends ChangeNotifier {
   final BackendService _backend = BackendService();
+  final GeminiService _gemini = GeminiService();
 
   List<Email> _emails = [];
   bool _isLoading = false;
@@ -16,6 +19,9 @@ class GmailService extends ChangeNotifier {
   String? _error;
   Timer? _syncTimer;
   final Set<String> _knownEmailIds = {};
+
+  /// Max concurrent requests per batch
+  static const int _concurrencyLimit = 10;
 
   List<Email> get emails => _emails;
   bool get isLoading => _isLoading;
@@ -40,7 +46,8 @@ class GmailService extends ChangeNotifier {
     _syncTimer = null;
   }
 
-  /// Fetch emails from API
+  /// Fetch emails from API using metadata-first loading strategy.
+  /// List view uses 'metadata' format (fast), detail view fetches 'full' on demand.
   Future<void> fetchEmails({String? query, String? accountEmail}) async {
     _isLoading = true;
     _error = null;
@@ -50,24 +57,84 @@ class GmailService extends ChangeNotifier {
       final params = <String, String>{};
       if (query != null && query.isNotEmpty) params['q'] = query;
       params['maxResults'] = '50';
+      params['format'] = 'metadata'; // Metadata-first loading
 
       final response = await _backend.get('/api/gmail/messages', queryParams: params);
 
       final messages = response['messages'] as List? ?? response['data'] as List? ?? [];
-      _emails = messages.map((m) {
-        final email = Email.fromJson(m as Map<String, dynamic>);
+
+      // Graceful empty fetch handling: don't wipe existing emails on empty response
+      if (messages.isEmpty && _emails.isNotEmpty) {
+        debugPrint('[Gmail] Fetch returned 0 results — keeping existing emails (possible network/token error)');
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // Parse emails with bounded concurrent processing
+      _emails = await _parseEmailsBounded(messages);
+
+      for (final email in _emails) {
         _knownEmailIds.add(email.id);
-        return email;
-      }).toList();
+      }
 
       _emails.sort((a, b) => b.date.compareTo(a.date));
       await _persistKnownIds();
 
       _isLoading = false;
       notifyListeners();
+
+      // Run AI priority detection in background batches
+      _runAIPriorityBatchDetection();
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Parse emails in bounded concurrent batches
+  Future<List<Email>> _parseEmailsBounded(List<dynamic> messages) async {
+    final emails = <Email>[];
+    // Process in batches of _concurrencyLimit
+    for (var i = 0; i < messages.length; i += _concurrencyLimit) {
+      final batchEnd = min(i + _concurrencyLimit, messages.length);
+      final batch = messages.sublist(i, batchEnd);
+      final batchResults = batch.map((m) {
+        return Email.fromJson(m as Map<String, dynamic>);
+      }).toList();
+      emails.addAll(batchResults);
+    }
+    return emails;
+  }
+
+  /// Run AI priority detection on unread emails in background batches of 5
+  Future<void> _runAIPriorityBatchDetection() async {
+    final unreadEmails = _emails.where((e) => !e.isRead && !e.isAIPriority).toList();
+    if (unreadEmails.isEmpty) return;
+
+    const batchSize = 5;
+    for (var i = 0; i < unreadEmails.length; i += batchSize) {
+      final batchEnd = min(i + batchSize, unreadEmails.length);
+      final batch = unreadEmails.sublist(i, batchEnd);
+
+      // Process batch concurrently
+      final futures = batch.map((email) async {
+        try {
+          final isPriority = await _gemini.isEmailPriority(
+            subject: email.subject,
+            body: email.body.length > 200 ? email.body.substring(0, 200) : email.body,
+            from: email.from.displayName,
+          );
+          if (isPriority) {
+            email.isAIPriority = true;
+          }
+        } catch (_) {
+          // Silently skip failed priority checks
+        }
+      });
+
+      await Future.wait(futures);
       notifyListeners();
     }
   }
@@ -81,6 +148,7 @@ class GmailService extends ChangeNotifier {
     try {
       final response = await _backend.get('/api/gmail/messages', queryParams: {
         'maxResults': '20',
+        'format': 'metadata',
       });
 
       final messages = response['messages'] as List? ?? response['data'] as List? ?? [];
@@ -130,14 +198,30 @@ class GmailService extends ChangeNotifier {
     }
   }
 
-  /// Fetch single email detail
+  /// Fetch single email detail (full format for body, attachments, etc.)
   Future<Email?> fetchEmailDetail(String id) async {
     try {
-      final response = await _backend.get('/api/gmail/messages/$id');
+      final response = await _backend.get('/api/gmail/messages/$id',
+          queryParams: {'format': 'full'});
       final message = response['message'] as Map<String, dynamic>? ?? response;
       return Email.fromJson(message);
     } catch (e) {
       debugPrint('Error fetching email detail: $e');
+      return null;
+    }
+  }
+
+  /// Download an attachment and return the raw bytes
+  Future<List<int>?> downloadAttachment({
+    required String messageId,
+    required String attachmentId,
+  }) async {
+    try {
+      return await _backend.getBytes(
+        '/api/gmail/messages/$messageId/attachments/$attachmentId',
+      );
+    } catch (e) {
+      debugPrint('Error downloading attachment: $e');
       return null;
     }
   }

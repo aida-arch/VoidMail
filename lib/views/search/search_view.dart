@@ -28,6 +28,7 @@ class _SearchViewState extends State<SearchView> {
     ('Attachments', Icons.attach_file),
     ('Starred', Icons.star),
     ('Unread', Icons.mark_email_unread),
+    ('This Week', Icons.date_range),
     ('Sent', Icons.send),
     ('Drafts', Icons.drafts),
   ];
@@ -60,13 +61,26 @@ class _SearchViewState extends State<SearchView> {
     final query = _searchController.text.toLowerCase();
 
     setState(() {
-      _searchResults = gmail.emails.where((e) {
-        return e.subject.toLowerCase().contains(query) ||
-            e.from.displayName.toLowerCase().contains(query) ||
-            e.from.email.toLowerCase().contains(query) ||
-            e.snippet.toLowerCase().contains(query) ||
-            e.body.toLowerCase().contains(query);
-      }).toList();
+      // Special tag-based filters
+      if (query == 'this week') {
+        final now = DateTime.now();
+        final weekAgo = now.subtract(const Duration(days: 7));
+        _searchResults = gmail.emails.where((e) => e.date.isAfter(weekAgo)).toList();
+      } else if (query == 'attachments') {
+        _searchResults = gmail.emails.where((e) => e.attachments.isNotEmpty).toList();
+      } else if (query == 'starred') {
+        _searchResults = gmail.emails.where((e) => e.isStarred).toList();
+      } else if (query == 'unread') {
+        _searchResults = gmail.emails.where((e) => !e.isRead).toList();
+      } else {
+        _searchResults = gmail.emails.where((e) {
+          return e.subject.toLowerCase().contains(query) ||
+              e.from.displayName.toLowerCase().contains(query) ||
+              e.from.email.toLowerCase().contains(query) ||
+              e.snippet.toLowerCase().contains(query) ||
+              e.body.toLowerCase().contains(query);
+        }).toList();
+      }
       _isSearching = false;
     });
   }

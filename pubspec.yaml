@@ -29,6 +29,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   workmanager: ^0.5.2
   timezone: ^0.9.4
+  path_provider: ^2.1.5
+  open_filex: ^4.5.0
 
 dev_dependencies:
   flutter_test:
