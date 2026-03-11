@@ -582,7 +582,7 @@ class _HelixO1ViewState extends State<HelixO1View>
               child: Text(
                 alert.type.label,
                 style: Typo.caption.copyWith(
-                  fontSize: 10,
+                  fontSize: 13,
                   color: alert.color,
                   fontWeight: FontWeight.w600,
                 ),

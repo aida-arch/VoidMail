@@ -119,7 +119,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
       child: Row(
         children: [
           Text(
-            DateFormat('MMMM').format(_currentMonth).toUpperCase(),
+            DateFormat('MMMM yyyy').format(_currentMonth).toUpperCase(),
             style: Typo.title2.copyWith(letterSpacing: -0.5),
           ),
           const Spacer(),
@@ -134,7 +134,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
               padding: EdgeInsets.all(8),
               child: Icon(
                 Icons.chevron_left,
-                size: 16,
+                size: 30,
                 color: VoidColors.textSecondary,
               ),
             ),
@@ -173,7 +173,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
               padding: EdgeInsets.all(8),
               child: Icon(
                 Icons.chevron_right,
-                size: 16,
+                size: 30,
                 color: VoidColors.textSecondary,
               ),
             ),
@@ -194,7 +194,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                     child: Text(
                       d,
                       style: Typo.mono.copyWith(
-                        fontSize: 12,
+                        fontSize: 16,
                         color: VoidColors.textTertiary,
                       ),
                     ),
@@ -250,7 +250,7 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                         Text(
                           '${date.day}',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 19,
                             fontFamily: 'monospace',
                             fontWeight: isToday || isSelected
                                 ? FontWeight.bold
@@ -258,8 +258,8 @@ class _CalendarTabViewState extends State<CalendarTabView> {
                             color: isSelected
                                 ? VoidColors.textInverse
                                 : isCurrentMonth
-                                    ? VoidColors.textPrimary
-                                    : VoidColors.textTertiary,
+                                    ? VoidColors.textSecondary
+                                    : const Color(0xFF3A3A3A),
                           ),
                         ),
                         if (eventColors.isNotEmpty)
@@ -332,12 +332,14 @@ class _EventCard extends StatelessWidget {
                 Text(
                   _startTimeFormatted,
                   style: Typo.mono.copyWith(
+                    fontSize: 17,
                     color: VoidColors.textSecondary,
                   ),
                 ),
                 Text(
                   event.duration,
                   style: Typo.monoSmall.copyWith(
+                    fontSize: 15,
                     color: VoidColors.textTertiary,
                   ),
                 ),
@@ -347,14 +349,14 @@ class _EventCard extends StatelessWidget {
 
           // Color bar
           Container(
-            width: 3,
-            height: 50,
+            width: 4,
+            height: 60,
             decoration: BoxDecoration(
               color: event.color,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 18),
 
           // Event details
           Expanded(
@@ -363,7 +365,7 @@ class _EventCard extends StatelessWidget {
               children: [
                 Text(
                   event.title,
-                  style: Typo.headline,
+                  style: Typo.headline.copyWith(fontSize: 20),
                 ),
                 if (event.location != null) ...[
                   const SizedBox(height: 4),
@@ -371,14 +373,14 @@ class _EventCard extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.location_on,
-                        size: 14,
+                        size: 16,
                         color: VoidColors.textTertiary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           event.location!,
-                          style: Typo.subhead.copyWith(fontSize: 13),
+                          style: Typo.subhead.copyWith(fontSize: 15),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -392,31 +394,31 @@ class _EventCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.videocam,
-                        size: 14,
+                        size: 18,
                         color: event.color,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
                         event.meetingPlatform!,
                         style: Typo.subhead.copyWith(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: event.color,
                         ),
                       ),
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
                           color: event.color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           'JOIN',
                           style: Typo.mono.copyWith(
-                            fontSize: 12,
+                            fontSize: 15,
                             color: event.color,
                           ),
                         ),

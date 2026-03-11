@@ -204,13 +204,13 @@ class _EmailRowViewState extends State<EmailRowView>
         // Account color indicator (left edge bar)
         Positioned(
           left: -8,
-          top: 0,
+          top: 8,
+          bottom: 8,
           child: Container(
             width: 3,
-            height: 44,
             decoration: BoxDecoration(
               color: widget.email.isRead
-                  ? VoidColors.accentSkyBlue
+                  ? VoidColors.accentPink
                   : VoidColors.accentYellow,
               borderRadius: BorderRadius.circular(2),
             ),

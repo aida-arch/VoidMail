@@ -249,12 +249,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
                           ),
                         )
                       else if (widget.email.aiSummary != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: AISummaryCard(
-                            summary: widget.email.aiSummary,
-                          ),
-                        ),
+                        const SizedBox.shrink(),
                       const SizedBox(height: 12),
 
                       // AI Translate status
@@ -364,8 +359,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
               ),
             ),
 
-            // Bottom action bar
-            _buildBottomBar(),
+            // Bottom action bar removed — now in header
           ],
         ),
       ),
@@ -374,48 +368,92 @@ class _EmailDetailViewState extends State<EmailDetailView>
 
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: VoidColors.textPrimary),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () {
-              final gmail = context.read<GmailService>();
-              gmail.toggleStar(widget.email.id);
-              _sound.playStarSound();
-              setState(() {});
-            },
-            icon: Icon(
-              widget.email.isStarred ? Icons.star : Icons.star_outline,
-              color: widget.email.isStarred
-                  ? VoidColors.accentYellow
-                  : VoidColors.textTertiary,
+          // Back button
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 50,
+              height: 55,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2E),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF48484A),
+                  width: 1.5 ,
+                ),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.chevron_left,
+                  size: 30,
+                  color: VoidColors.textPrimary,
+                ),
+              ),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              context.read<GmailService>().archiveEmail(widget.email.id);
-              _sound.playDeleteSound();
-              Navigator.pop(context);
-            },
-            icon: const Icon(
-              Icons.archive_outlined,
-              color: VoidColors.textTertiary,
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              context.read<GmailService>().deleteEmail(widget.email.id);
-              _sound.playDeleteSound();
-              Navigator.pop(context);
-            },
-            icon: const Icon(
-              Icons.delete_outline,
-              color: VoidColors.textTertiary,
+          const SizedBox(width: 15),
+          // Action bar pill
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1C1E).withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(
+                  color: const Color(0xFF505052).withValues(alpha: 0.55),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildActionButton(
+                    Icons.reply_outlined,
+                    VoidColors.accentSkyBlue,
+                    () => _openCompose(null, mode: ComposeMode.reply),
+                  ),
+                  _buildActionButton(
+                    Icons.reply_all_outlined,
+                    VoidColors.accentGreen,
+                    () => _openCompose(null, mode: ComposeMode.replyAll),
+                  ),
+                  _buildActionButton(
+                    Icons.forward_outlined,
+                    VoidColors.accentPink,
+                    () => _openCompose(null, mode: ComposeMode.forward),
+                  ),
+                  _buildActionButton(
+                    widget.email.isStarred ? Icons.star : Icons.star_border,
+                    VoidColors.textSecondary,
+                    () {
+                      context.read<GmailService>().toggleStar(widget.email.id);
+                      _sound.playStarSound();
+                      setState(() {});
+                    },
+                  ),
+                  _buildActionButton(
+                    Icons.archive_outlined,
+                    VoidColors.textSecondary,
+                    () {
+                      context.read<GmailService>().archiveEmail(widget.email.id);
+                      _sound.playDeleteSound();
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildActionButton(
+                    Icons.delete_outline,
+                    VoidColors.textSecondary,
+                    () {
+                      context.read<GmailService>().deleteEmail(widget.email.id);
+                      _sound.playDeleteSound();
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -655,7 +693,20 @@ class _EmailDetailViewState extends State<EmailDetailView>
       return;
     }
 
-    if (!attachment.isDownloadable) return;
+    if (!attachment.isDownloadable) {
+      // Mock/demo attachment — show info instead
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${attachment.name} (${attachment.formattedSize})'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: VoidColors.bgCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _downloadingAttachments.add(attachment.id));
 
@@ -679,11 +730,17 @@ class _EmailDetailViewState extends State<EmailDetailView>
         await OpenFilex.open(file.path);
       } else if (mounted) {
         setState(() => _downloadingAttachments.remove(attachment.id));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to download attachment')),
+        );
       }
     } catch (e) {
       debugPrint('Error downloading attachment: $e');
       if (mounted) {
         setState(() => _downloadingAttachments.remove(attachment.id));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
       }
     }
   }
@@ -767,10 +824,10 @@ class _EmailDetailViewState extends State<EmailDetailView>
           children: [
             const Icon(
               Icons.auto_awesome,
-              size: 14,
+              size: 16,
               color: VoidColors.accentSkyBlue,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 15),
             Text(
               'SMART REPLIES',
               style: Typo.metaLabel.copyWith(
@@ -779,7 +836,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 35),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -790,7 +847,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
                   onTap: () => _openCompose(reply),
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: VoidColors.accentSkyBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -812,75 +869,12 @@ class _EmailDetailViewState extends State<EmailDetailView>
     );
   }
 
-  Widget _buildBottomBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      color: VoidColors.bgDeep,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            Icons.reply,
-            'Reply',
-            VoidColors.accentSkyBlue,
-            () => _openCompose(null, mode: ComposeMode.reply),
-          ),
-          _buildActionButton(
-            Icons.reply_all,
-            'Reply All',
-            VoidColors.accentGreen,
-            () => _openCompose(null, mode: ComposeMode.replyAll),
-          ),
-          _buildActionButton(
-            Icons.forward,
-            'Forward',
-            VoidColors.accentPink,
-            () => _openCompose(null, mode: ComposeMode.forward),
-          ),
-          _buildActionButton(
-            widget.email.isStarred ? Icons.star : Icons.star_border,
-            'Star',
-            VoidColors.textSecondary,
-            () {
-              context.read<GmailService>().toggleStar(widget.email.id);
-              setState(() {});
-            },
-          ),
-          _buildActionButton(
-            Icons.archive_outlined,
-            'Archive',
-            VoidColors.textSecondary,
-            () {
-              context.read<GmailService>().archiveEmail(widget.email.id);
-              Navigator.pop(context);
-            },
-          ),
-          _buildActionButton(
-            Icons.delete_outline,
-            'Delete',
-            VoidColors.textSecondary,
-            () {
-              context.read<GmailService>().deleteEmail(widget.email.id);
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildActionButton(
-      IconData icon, String label, Color color, VoidCallback onTap) {
+      IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(height: 4),
-          Text(label, style: Typo.caption),
-        ],
-      ),
+      child: Icon(icon, size: 30, color: color),
     );
   }
 

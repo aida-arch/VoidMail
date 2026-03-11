@@ -258,7 +258,7 @@ class _SettingsViewState extends State<SettingsView> {
                   child: Text(
                     'PRIMARY',
                     style: Typo.mono.copyWith(
-                      fontSize: 11,
+                      fontSize: 14,
                       color: VoidColors.textPrimary,
                       letterSpacing: 1,
                     ),
@@ -275,7 +275,7 @@ class _SettingsViewState extends State<SettingsView> {
                 Text(
                   'COLOR',
                   style: Typo.mono.copyWith(
-                    fontSize: 11,
+                    fontSize: 14,
                     color: VoidColors.textTertiary,
                     letterSpacing: 1,
                   ),

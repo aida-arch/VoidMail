@@ -493,6 +493,7 @@ class _ComposeViewState extends State<ComposeView>
     return Padding(
       padding: const EdgeInsets.fromLTRB(80, 0, 20, 0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           if (!_showCc)
             GestureDetector(

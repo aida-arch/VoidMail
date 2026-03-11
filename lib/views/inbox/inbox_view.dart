@@ -169,7 +169,7 @@ class _InboxViewState extends State<InboxView> {
                           )
                         : const Icon(
                             Icons.refresh,
-                            size: 15,
+                            size: 16,
                             color: VoidColors.accentGreen,
                           ),
                   ),
@@ -189,7 +189,7 @@ class _InboxViewState extends State<InboxView> {
                   child: const Center(
                     child: Icon(
                       Icons.auto_awesome,
-                      size: 15,
+                      size: 16,
                       color: VoidColors.accentSkyBlue,
                     ),
                   ),
@@ -244,10 +244,14 @@ class _InboxViewState extends State<InboxView> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: VoidColors.bgCardHover,
-          borderRadius: BorderRadius.circular(20),
+          color: VoidColors.bgCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: VoidColors.border,
+            width: 0.5,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -256,9 +260,10 @@ class _InboxViewState extends State<InboxView> {
               constraints: BoxConstraints(maxWidth: maxWidth ?? 100),
               child: Text(
                 label,
-                style: Typo.meta.copyWith(
-                  letterSpacing: 0.5,
-                  color: VoidColors.textPrimary,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: VoidColors.textSecondary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -288,41 +293,46 @@ class _InboxViewState extends State<InboxView> {
       builder: (ctx) => GestureDetector(
         onTap: () => _showFilterPicker(),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isFiltered
-                ? VoidColors.accentSkyBlue.withValues(alpha: 0.12)
-                : VoidColors.bgCardHover,
-            borderRadius: BorderRadius.circular(20),
+                ? VoidColors.accentSkyBlue.withValues(alpha: 0.15)
+                : VoidColors.bgCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isFiltered ? VoidColors.accentSkyBlue.withValues(alpha: 0.3) : VoidColors.border,
+              width: 0.5,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 _showUnreadOnly
-                    ? Icons.mark_email_unread
+                    ? Icons.mark_email_unread_outlined
                     : _showReadOnly
-                        ? Icons.drafts
-                        : Icons.email,
-                size: 11,
+                        ? Icons.drafts_outlined
+                        : Icons.mail_outline,
+                size: 14,
                 color: isFiltered
                     ? VoidColors.accentSkyBlue
                     : VoidColors.textTertiary,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Text(
                 label,
-                style: Typo.meta.copyWith(
-                  letterSpacing: 0.5,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                   color: isFiltered
                       ? VoidColors.accentSkyBlue
-                      : VoidColors.textPrimary,
+                      : VoidColors.textSecondary,
                 ),
               ),
               const SizedBox(width: 4),
               Icon(
                 Icons.keyboard_arrow_down,
-                size: 14,
+                size: 16,
                 color: isFiltered
                     ? VoidColors.accentSkyBlue
                     : VoidColors.textTertiary,

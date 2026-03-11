@@ -98,14 +98,14 @@ class Attachment {
 
   bool get isDownloadable => attachmentId != null && messageId != null;
 
-  factory Attachment.fromJson(Map<String, dynamic> json) {
+  factory Attachment.fromJson(Map<String, dynamic> json, {String? emailId}) {
     return Attachment(
-      id: json['id'] ?? '',
-      name: json['name'] ?? 'Untitled',
+      id: json['id'] ?? json['attachmentId'] ?? '',
+      name: json['name'] ?? json['filename'] ?? 'Untitled',
       mimeType: json['mimeType'] ?? 'application/octet-stream',
       size: json['size'] ?? 0,
-      attachmentId: json['attachmentId'],
-      messageId: json['messageId'],
+      attachmentId: json['attachmentId'] ?? json['body']?['attachmentId'] ?? json['id'],
+      messageId: json['messageId'] ?? emailId,
     );
   }
 }
@@ -232,7 +232,7 @@ class Email {
       category: category,
       labels: labels,
       attachments: (json['attachments'] as List?)
-              ?.map((a) => Attachment.fromJson(a))
+              ?.map((a) => Attachment.fromJson(a as Map<String, dynamic>, emailId: json['id']))
               .toList() ??
           [],
       accountEmail: json['accountEmail'],

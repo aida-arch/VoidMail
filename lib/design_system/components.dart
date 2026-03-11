@@ -733,14 +733,14 @@ class AISummaryCard extends StatefulWidget {
 }
 
 class _AISummaryCardState extends State<AISummaryCard> {
-  bool _isExpanded = true;
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: VoidColors.bgCard,
+        color: VoidColors.bgDeep,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -752,7 +752,7 @@ class _AISummaryCardState extends State<AISummaryCard> {
               children: [
                 const Icon(
                   Icons.auto_awesome,
-                  size: 14,
+                  size: 16,
                   color: VoidColors.accentSkyBlue,
                 ),
                 const SizedBox(width: 8),
@@ -760,7 +760,6 @@ class _AISummaryCardState extends State<AISummaryCard> {
                   'AI SUMMARY',
                   style: Typo.metaLabel.copyWith(
                     color: VoidColors.accentSkyBlue,
-                    letterSpacing: 1,
                   ),
                 ),
                 const Spacer(),
@@ -768,7 +767,7 @@ class _AISummaryCardState extends State<AISummaryCard> {
                   _isExpanded
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
-                  size: 12,
+                  size: 20,
                   color: VoidColors.textTertiary,
                 ),
               ],
