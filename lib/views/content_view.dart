@@ -44,22 +44,37 @@ class _ContentViewState extends State<ContentView> {
               child: _buildTabContent(),
             ),
 
-            // FAB
-            Positioned(
-              right: 20,
-              bottom: 110,
-              child: _buildFAB(),
-            ),
-
-            // Bottom nav bar
+            // Bottom nav bar + FAB
             Positioned(
               left: 0,
               right: 0,
-              bottom: 4,
-              child: BottomNavBar(
-                selectedIndex: _selectedTab,
-                onTap: (index) => setState(() => _selectedTab = index),
-                onComposeTap: _openCompose,
+              bottom: 28,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  BottomNavBar(
+                    selectedIndex: _selectedTab,
+                    onTap: (index) => setState(() => _selectedTab = index),
+                  ),
+                  if (_selectedTab == 0) ...[
+                    const SizedBox(width: 8),
+                    MonochromeFAB(
+                      key: const ValueKey('compose_fab'),
+                      icon: Icons.edit,
+                      color: VoidColors.accentPink,
+                      onTap: _openCompose,
+                    ),
+                  ],
+                  if (_selectedTab == 1) ...[
+                    const SizedBox(width: 8),
+                    MonochromeFAB(
+                      key: const ValueKey('calendar_fab'),
+                      icon: Icons.add,
+                      color: VoidColors.accentSand,
+                      onTap: _openCreateEvent,
+                    ),
+                  ],
+                ],
               ),
             ),
 
@@ -93,19 +108,6 @@ class _ContentViewState extends State<ContentView> {
       default:
         return const SizedBox.shrink();
     }
-  }
-
-  Widget _buildFAB() {
-    // Compose moved to nav bar; keep calendar FAB as floating
-    if (_selectedTab == 1) {
-      return MonochromeFAB(
-        key: const ValueKey('calendar_fab'),
-        icon: Icons.add,
-        color: VoidColors.accentSand,
-        onTap: _openCreateEvent,
-      );
-    }
-    return const SizedBox.shrink();
   }
 
   void _openCompose() {

@@ -123,18 +123,11 @@ class _EmailRowViewState extends State<EmailRowView>
                             // Sender + timestamp row
                             Row(
                               children: [
-                                if (!widget.email.isRead)
-                                  const Padding(
-                                    padding: EdgeInsets.only(right: 6),
-                                    child: UnreadDot(size: 6),
-                                  ),
                                 Expanded(
                                   child: Text(
                                     widget.email.from.displayName,
                                     style: widget.email.isRead
-                                        ? Typo.body.copyWith(
-                                            color: VoidColors.textSecondary,
-                                          )
+                                        ? Typo.body
                                         : Typo.headline.copyWith(fontSize: 16),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -151,12 +144,14 @@ class _EmailRowViewState extends State<EmailRowView>
                             // Subject
                             Text(
                               widget.email.subject,
-                              style: Typo.body.copyWith(
-                                fontSize: 15,
-                                color: widget.email.isRead
-                                    ? VoidColors.textSecondary
-                                    : VoidColors.textPrimary,
-                              ),
+                              style: widget.email.isRead
+                                  ? Typo.subhead.copyWith(
+                                      color: VoidColors.textSecondary,
+                                    )
+                                  : Typo.body.copyWith(
+                                      fontSize: 15,
+                                      color: VoidColors.textPrimary,
+                                    ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -207,21 +202,20 @@ class _EmailRowViewState extends State<EmailRowView>
           size: 44,
         ),
         // Account color indicator (left edge bar)
-        if (widget.email.accountEmail != null)
-          Positioned(
-            left: -8,
-            top: 8,
-            bottom: 8,
-            child: Container(
-              width: 3,
-              decoration: BoxDecoration(
-                color: widget.email.isRead
-                    ? VoidColors.accentPink
-                    : VoidColors.accentYellow,
-                borderRadius: BorderRadius.circular(2),
-              ),
+        Positioned(
+          left: -8,
+          top: 0,
+          child: Container(
+            width: 3,
+            height: 44,
+            decoration: BoxDecoration(
+              color: widget.email.isRead
+                  ? VoidColors.accentSkyBlue
+                  : VoidColors.accentYellow,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
+        ),
       ],
     );
   }

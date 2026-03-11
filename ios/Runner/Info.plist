@@ -79,5 +79,7 @@
 	<array>
 		<string>com.neuralarc.voidmail.emailCheck</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to attach images to emails.</string>
 </dict>
 </plist>

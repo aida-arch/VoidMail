@@ -280,120 +280,45 @@ class _MonochromeFABState extends State<MonochromeFAB>
 }
 
 /// Bottom Nav Bar - Floating pill navigation with matched geometry
-class BottomNavBar extends StatefulWidget {
+class BottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
-  final VoidCallback? onComposeTap;
 
   const BottomNavBar({
     super.key,
     required this.selectedIndex,
     required this.onTap,
-    this.onComposeTap,
   });
 
-  @override
-  State<BottomNavBar> createState() => _BottomNavBarState();
-}
-
-class _BottomNavBarState extends State<BottomNavBar>
-    with SingleTickerProviderStateMixin {
   static const _items = [
-    _NavItem(Icons.inbox_outlined, Icons.inbox, 'Inbox'),
-    _NavItem(Icons.calendar_today_outlined, Icons.calendar_today, 'Calendar'),
+    _NavItem(Icons.mail_outline, Icons.mail, 'Inbox'),
+    _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, 'Calendar'),
     _NavItem(Icons.search_outlined, Icons.search, 'Search'),
     _NavItem(Icons.settings_outlined, Icons.settings, 'Settings'),
   ];
 
-  late AnimationController _composeController;
-  late Animation<double> _composeScale;
-  bool _composePressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _composeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _composeScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _composeController, curve: Curves.elasticOut),
-    );
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _composeController.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _composeController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(100, 60, 92, 40),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: VoidColors.bgCard,
         borderRadius: BorderRadius.circular(32),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // All 4 nav items
-          for (int index = 0; index < 4; index++)
-            _buildNavItem(index),
-
-          // Compose button on the right
-          if (widget.onComposeTap != null)
-            ScaleTransition(
-              scale: _composeScale,
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => _composePressed = true),
-                onTapUp: (_) {
-                  setState(() => _composePressed = false);
-                  widget.onComposeTap!();
-                },
-                onTapCancel: () => setState(() => _composePressed = false),
-                child: AnimatedScale(
-                  scale: _composePressed ? 0.88 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: VoidColors.accentPink,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: VoidColors.accentPink.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: VoidColors.bgDeep,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(_items.length, (index) {
+          return _buildNavItem(index);
+        }),
       ),
     );
   }
 
   Widget _buildNavItem(int index) {
     final item = _items[index];
-    final isSelected = index == widget.selectedIndex;
+    final isSelected = index == selectedIndex;
     return GestureDetector(
-      onTap: () => widget.onTap(index),
+      onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -794,17 +719,13 @@ class _VoidButtonState extends State<VoidButton> {
   }
 }
 
-/// AI Summary Card - Collapsible AI summary
+/// AI Summary Card - Collapsible AI summary (matches reference)
 class AISummaryCard extends StatefulWidget {
   final String? summary;
-  final bool isLoading;
-  final VoidCallback? onGenerate;
 
   const AISummaryCard({
     super.key,
     this.summary,
-    this.isLoading = false,
-    this.onGenerate,
   });
 
   @override
@@ -816,8 +737,12 @@ class _AISummaryCardState extends State<AISummaryCard> {
 
   @override
   Widget build(BuildContext context) {
-    return VoidCard(
-      color: VoidColors.bgSurface,
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: VoidColors.bgCard,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -827,7 +752,7 @@ class _AISummaryCardState extends State<AISummaryCard> {
               children: [
                 const Icon(
                   Icons.auto_awesome,
-                  size: 16,
+                  size: 14,
                   color: VoidColors.accentSkyBlue,
                 ),
                 const SizedBox(width: 8),
@@ -835,46 +760,29 @@ class _AISummaryCardState extends State<AISummaryCard> {
                   'AI SUMMARY',
                   style: Typo.metaLabel.copyWith(
                     color: VoidColors.accentSkyBlue,
+                    letterSpacing: 1,
                   ),
                 ),
                 const Spacer(),
-                if (widget.summary == null && !widget.isLoading)
-                  GestureDetector(
-                    onTap: widget.onGenerate,
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      size: 18,
-                      color: VoidColors.accentSkyBlue,
-                    ),
-                  )
-                else
-                  Icon(
-                    _isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    size: 20,
-                    color: VoidColors.textTertiary,
-                  ),
+                Icon(
+                  _isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  size: 12,
+                  color: VoidColors.textTertiary,
+                ),
               ],
             ),
           ),
-          if (_isExpanded) ...[
-            const SizedBox(height: 12),
-            if (widget.isLoading)
-              const ShimmerLine(width: double.infinity, height: 16)
-            else if (widget.summary != null)
-              Text(
-                widget.summary!,
-                style: Typo.subhead,
-              )
-            else
-              Text(
-                'Tap to generate AI summary',
-                style: Typo.subhead.copyWith(
-                  color: VoidColors.textTertiary,
-                  fontStyle: FontStyle.italic,
-                ),
+          if (_isExpanded && widget.summary != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              widget.summary!,
+              style: Typo.subhead.copyWith(
+                color: VoidColors.textSecondary,
+                height: 1.4,
               ),
+            ),
           ],
         ],
       ),

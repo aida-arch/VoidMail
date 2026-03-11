@@ -116,6 +116,7 @@ class _InboxViewState extends State<InboxView> {
   }
 
   Widget _buildHeader(GmailService gmail, AuthService auth) {
+    final unread = gmail.unreadCount;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Column(
@@ -129,17 +130,17 @@ class _InboxViewState extends State<InboxView> {
                 style: Typo.metaLabel,
               ),
               const Spacer(),
-              // Unread count
+              // Unread count with label
               Text(
-                '${gmail.unreadCount}',
+                '$unread UNREAD',
                 style: Typo.mono.copyWith(
-                  color: gmail.unreadCount > 0
+                  color: unread > 0
                       ? VoidColors.accentYellow
                       : VoidColors.textTertiary,
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               // Sync circle button
               GestureDetector(
                 onTap: () => gmail.fetchEmails(),
@@ -162,7 +163,7 @@ class _InboxViewState extends State<InboxView> {
                           )
                         : const Icon(
                             Icons.refresh,
-                            size: 16,
+                            size: 15,
                             color: VoidColors.accentGreen,
                           ),
                   ),
@@ -182,7 +183,7 @@ class _InboxViewState extends State<InboxView> {
                   child: const Center(
                     child: Icon(
                       Icons.auto_awesome,
-                      size: 16,
+                      size: 15,
                       color: VoidColors.accentSkyBlue,
                     ),
                   ),
@@ -190,38 +191,124 @@ class _InboxViewState extends State<InboxView> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          // Title row with inline account dropdown + read filter
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'INBOX',
-                style: Typo.inboxTitle,
-              ),
-              const SizedBox(width: 12),
-              if (auth.accounts.length > 1)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: TagChip(
-                    label: _selectedAccount ?? 'All',
-                    onTap: () {
-                      _showAccountPicker(auth);
-                    },
-                  ),
+          // Title row with inline filter pills
+          Transform.translate(
+            offset: const Offset(0, -6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  'INBOX',
+                  style: Typo.inboxTitle,
                 ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: TagChip(
-                  label: _showUnreadOnly ? 'Unread' : 'All',
-                  isActive: _showUnreadOnly,
-                  onTap: () =>
-                      setState(() => _showUnreadOnly = !_showUnreadOnly),
+                const Spacer(),
+                // Account dropdown pill
+                _buildDropdownPill(
+                  label: _selectedAccount != null
+                      ? auth.accounts
+                          .firstWhere(
+                            (a) => a.email == _selectedAccount,
+                            orElse: () => auth.accounts.first,
+                          )
+                          .label
+                      : 'All',
+                  onTap: () => _showAccountPicker(auth),
+                  maxWidth: 80,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                // Read/Unread filter pill
+                _buildFilterPill(),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownPill({
+    required String label,
+    required VoidCallback onTap,
+    double? maxWidth,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: VoidColors.bgCardHover,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth ?? 100),
+              child: Text(
+                label,
+                style: Typo.meta.copyWith(
+                  letterSpacing: 0.5,
+                  color: VoidColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 14,
+              color: VoidColors.textTertiary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterPill() {
+    final isFiltered = _showUnreadOnly;
+    return GestureDetector(
+      onTap: () => setState(() => _showUnreadOnly = !_showUnreadOnly),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isFiltered
+              ? VoidColors.accentSkyBlue.withValues(alpha: 0.12)
+              : VoidColors.bgCardHover,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isFiltered ? Icons.mark_email_unread : Icons.email,
+              size: 11,
+              color: isFiltered
+                  ? VoidColors.accentSkyBlue
+                  : VoidColors.textTertiary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isFiltered ? 'Unread' : 'Filter',
+              style: Typo.meta.copyWith(
+                letterSpacing: 0.5,
+                color: isFiltered
+                    ? VoidColors.accentSkyBlue
+                    : VoidColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: 14,
+              color: isFiltered
+                  ? VoidColors.accentSkyBlue
+                  : VoidColors.textTertiary,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -33,7 +33,16 @@ class _EmailDetailViewState extends State<EmailDetailView>
   bool _isLoadingSummary = false;
   bool _isTranslating = false;
   String? _translatedBody;
+  String? _translateError;
   List<String> _smartReplies = [];
+
+  // Full email body (fetched on demand if metadata-only)
+  String? _fullBody;
+  bool _isLoadingBody = false;
+
+  /// Best available body text (full if loaded, otherwise whatever we have)
+  String get _displayBody =>
+      _fullBody ?? (widget.email.body.isEmpty ? widget.email.snippet : widget.email.body);
 
   // TTS
   bool _isPlaying = false;
@@ -51,6 +60,8 @@ class _EmailDetailViewState extends State<EmailDetailView>
       duration: const Duration(milliseconds: 500),
     )..forward();
 
+    _fetchFullBody();
+    _loadAISummary();
     _loadSmartReplies();
   }
 
@@ -60,11 +71,44 @@ class _EmailDetailViewState extends State<EmailDetailView>
     super.dispose();
   }
 
-  Future<void> _generateSummary() async {
+  /// Fetch full email body if we only have metadata/snippet
+  Future<void> _fetchFullBody() async {
+    if (widget.email.body.isNotEmpty) return; // Already have body
+    setState(() => _isLoadingBody = true);
+    try {
+      final gmail = context.read<GmailService>();
+      final full = await gmail.fetchEmailDetail(widget.email.id);
+      if (mounted && full != null && full.body.isNotEmpty) {
+        setState(() {
+          _fullBody = full.body;
+          _isLoadingBody = false;
+        });
+      } else if (mounted) {
+        setState(() => _isLoadingBody = false);
+      }
+    } catch (e) {
+      debugPrint('[EmailDetail] Error fetching full body: $e');
+      if (mounted) setState(() => _isLoadingBody = false);
+    }
+  }
+
+  /// Auto-generate AI summary on load (matching reference behavior)
+  Future<void> _loadAISummary() async {
+    // Skip if already have a cached summary
+    if (widget.email.aiSummary != null) return;
+
+    // Wait for full body to load first
+    if (_isLoadingBody) {
+      for (var i = 0; i < 30; i++) {
+        if (!_isLoadingBody) break;
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
     setState(() => _isLoadingSummary = true);
     final summary = await _gemini.summarizeEmail(
       subject: widget.email.subject,
-      body: widget.email.body,
+      body: _displayBody,
       from: widget.email.from.displayName,
     );
     if (mounted) {
@@ -76,14 +120,52 @@ class _EmailDetailViewState extends State<EmailDetailView>
   }
 
   Future<void> _translateEmail(String language) async {
-    setState(() => _isTranslating = true);
+    setState(() {
+      _isTranslating = true;
+      _translateError = null;
+    });
+
+    // Wait for body to load if still fetching (matching reference behavior)
+    if (_isLoadingBody) {
+      for (var i = 0; i < 30; i++) {
+        if (!_isLoadingBody) break;
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
+    // Use best available text
+    final textToTranslate = _displayBody;
+    if (textToTranslate.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _translateError = 'No email content to translate';
+          _isTranslating = false;
+        });
+      }
+      return;
+    }
+
+    // Clean HTML entities before sending to Gemini
+    final cleanBody = textToTranslate
+        .replaceAll('&#39;', "'")
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#x27;', "'")
+        .replaceAll('&nbsp;', ' ');
+
     final translated = await _gemini.translateEmail(
-      body: widget.email.body,
+      body: cleanBody,
       targetLanguage: language,
     );
     if (mounted) {
       setState(() {
-        _translatedBody = translated;
+        if (translated != null && translated.isNotEmpty) {
+          _translatedBody = translated;
+        } else {
+          _translateError = 'Translation failed — try again';
+        }
         _isTranslating = false;
       });
     }
@@ -93,7 +175,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
     final replies = await _gemini.generateSmartReplies(
       from: widget.email.from.displayName,
       subject: widget.email.subject,
-      body: widget.email.body,
+      body: _displayBody,
     );
     if (mounted) {
       setState(() {
@@ -141,21 +223,120 @@ class _EmailDetailViewState extends State<EmailDetailView>
                       ),
                       const SizedBox(height: 16),
 
-                      // AI Summary
-                      AISummaryCard(
-                        summary: widget.email.aiSummary,
-                        isLoading: _isLoadingSummary,
-                        onGenerate: _generateSummary,
-                      ),
+                      // AI Summary — auto-generated, matches reference
+                      if (_isLoadingSummary)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: VoidColors.accentSkyBlue,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'GENERATING SUMMARY...',
+                                style: Typo.mono.copyWith(
+                                  color: VoidColors.accentSkyBlue,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (widget.email.aiSummary != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: AISummaryCard(
+                            summary: widget.email.aiSummary,
+                          ),
+                        ),
                       const SizedBox(height: 12),
+
+                      // AI Translate status
+                      if (_isTranslating)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: VoidColors.accentPink,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'TRANSLATING...',
+                                style: Typo.mono.copyWith(
+                                  color: VoidColors.accentPink,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      if (_translateError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                size: 13,
+                                color: VoidColors.accentYellow,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _translateError!,
+                                style: Typo.mono.copyWith(
+                                  color: VoidColors.accentYellow,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
                       // Action row: Translate, Listen
                       _buildActionRow(),
                       const SizedBox(height: 20),
 
+                      // Email body loading indicator
+                      if (_isLoadingBody)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: VoidColors.textTertiary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'LOADING FULL EMAIL...',
+                                style: Typo.mono.copyWith(
+                                  color: VoidColors.textTertiary,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       // Email body
                       Text(
-                        _translatedBody ?? widget.email.body,
+                        _translatedBody ?? _displayBody,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
@@ -209,7 +390,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
               setState(() {});
             },
             icon: Icon(
-              widget.email.isStarred ? Icons.star : Icons.star_border,
+              widget.email.isStarred ? Icons.star : Icons.star_outline,
               color: widget.email.isStarred
                   ? VoidColors.accentYellow
                   : VoidColors.textTertiary,
@@ -284,117 +465,141 @@ class _EmailDetailViewState extends State<EmailDetailView>
   }
 
   Widget _buildActionRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Translate menu
-        PopupMenuButton<String>(
-          offset: const Offset(0, 40),
-          color: VoidColors.bgCard,
-          itemBuilder: (_) => [
-            'Spanish',
-            'French',
-            'German',
-            'Japanese',
-            'Hindi',
-            'Mandarin',
-          ]
-              .map((lang) => PopupMenuItem<String>(
-                    value: lang,
-                    child: Text(lang, style: Typo.body),
-                  ))
-              .toList(),
-          onSelected: _translateEmail,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: VoidColors.accentPink.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _isTranslating ? Icons.hourglass_top : Icons.language,
-                  size: 16,
-                  color: VoidColors.accentPink,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _isTranslating ? 'TRANSLATING...' : 'AI TRANSLATE',
-                  style: Typo.mono.copyWith(
-                    fontSize: 13,
-                    color: VoidColors.accentPink,
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          // Translate menu
+          IgnorePointer(
+            ignoring: _isTranslating || _isLoadingBody,
+            child: Opacity(
+              opacity: (_isTranslating || _isLoadingBody) ? 0.5 : 1.0,
+              child: PopupMenuButton<String>(
+                offset: const Offset(0, 40),
+                color: VoidColors.bgCard,
+                itemBuilder: (_) => [
+                  'Spanish',
+                  'French',
+                  'German',
+                  'Japanese',
+                  'Hindi',
+                  'Chinese (Simplified)',
+                ]
+                    .map((lang) => PopupMenuItem<String>(
+                          value: lang,
+                          child: Text(lang, style: Typo.body),
+                        ))
+                    .toList(),
+                onSelected: _translateEmail,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: VoidColors.accentPink.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 8),
-
-        // Listen button (TTS via Deepgram)
-        GestureDetector(
-          onTap: _toggleTTS,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: VoidColors.accentGreen.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: _isGeneratingAudio
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: VoidColors.accentGreen,
-                    ),
-                  )
-                : Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        _isPlaying ? Icons.pause : Icons.play_arrow,
-                        size: 16,
-                        color: VoidColors.accentGreen,
+                      const Icon(
+                        Icons.language,
+                        size: 14,
+                        color: VoidColors.accentPink,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        _isPlaying ? 'PAUSE' : 'LISTEN TO MAIL',
+                        'AI TRANSLATE',
                         style: Typo.mono.copyWith(
                           fontSize: 13,
-                          color: VoidColors.accentGreen,
+                          color: VoidColors.accentPink,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
                   ),
-          ),
-        ),
-
-        if (_translatedBody != null) ...[
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => setState(() => _translatedBody = null),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: VoidColors.bgCard,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: VoidColors.border, width: 0.5),
-              ),
-              child: Text(
-                'Original',
-                style: Typo.subhead.copyWith(
-                  fontSize: 13,
-                  color: VoidColors.textSecondary,
                 ),
               ),
             ),
           ),
+
+          const SizedBox(width: 10),
+
+          if (_translatedBody != null)
+            GestureDetector(
+              onTap: () => setState(() {
+                _translatedBody = null;
+                _translateError = null;
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: VoidColors.bgCard,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.undo,
+                      size: 12,
+                      color: VoidColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'ORIGINAL',
+                      style: Typo.mono.copyWith(
+                        fontSize: 13,
+                        color: VoidColors.textSecondary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          const Spacer(),
+
+          // Listen button (TTS via Deepgram)
+          GestureDetector(
+            onTap: _toggleTTS,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: VoidColors.accentGreen.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: _isGeneratingAudio
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: VoidColors.accentGreen,
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isPlaying ? Icons.pause : Icons.play_circle_filled,
+                          size: 15,
+                          color: VoidColors.accentGreen,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isPlaying ? 'PAUSE' : 'LISTEN TO EMAIL',
+                          style: Typo.mono.copyWith(
+                            fontSize: 13,
+                            color: VoidColors.accentGreen,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
         ],
-      ],
+      ),
     );
   }
 
@@ -420,7 +625,7 @@ class _EmailDetailViewState extends State<EmailDetailView>
     setState(() => _isGeneratingAudio = true);
     final path = await _deepgram.generateAudio(
       emailId: widget.email.id,
-      text: widget.email.body,
+      text: _displayBody,
     );
 
     if (mounted && path != null) {
@@ -615,25 +820,26 @@ class _EmailDetailViewState extends State<EmailDetailView>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildActionButton(
-            Icons.reply,
+            Icons.shortcut,
             'Reply',
             VoidColors.accentSkyBlue,
             () => _openCompose(null, mode: ComposeMode.reply),
+            flipHorizontal: true,
           ),
           _buildActionButton(
-            Icons.reply_all,
+            Icons.reply_all_outlined,
             'Reply All',
             VoidColors.accentGreen,
             () => _openCompose(null, mode: ComposeMode.replyAll),
           ),
           _buildActionButton(
-            Icons.forward,
+            Icons.shortcut,
             'Forward',
             VoidColors.accentPink,
             () => _openCompose(null, mode: ComposeMode.forward),
           ),
           _buildActionButton(
-            widget.email.isStarred ? Icons.star : Icons.star_border,
+            widget.email.isStarred ? Icons.star : Icons.star_outline,
             'Star',
             VoidColors.textSecondary,
             () {
@@ -665,13 +871,20 @@ class _EmailDetailViewState extends State<EmailDetailView>
   }
 
   Widget _buildActionButton(
-      IconData icon, String label, Color color, VoidCallback onTap) {
+      IconData icon, String label, Color color, VoidCallback onTap,
+      {bool flipHorizontal = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20, color: color),
+          Transform(
+            alignment: Alignment.center,
+            transform: flipHorizontal
+                ? (Matrix4.identity()..setEntry(0, 0, -1.0))
+                : Matrix4.identity(),
+            child: Icon(icon, size: 24, color: color),
+          ),
           const SizedBox(height: 4),
           Text(label, style: Typo.caption),
         ],

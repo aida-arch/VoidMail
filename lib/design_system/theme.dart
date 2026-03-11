@@ -61,15 +61,18 @@ class VoidTheme {
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return VoidColors.accentGreen;
+              return Colors.white;
             }
             return VoidColors.textTertiary;
           }),
           trackColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return VoidColors.accentGreen.withValues(alpha: 0.3);
+              return VoidColors.accentGreen;
             }
             return VoidColors.bgCard;
+          }),
+          trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+            return Colors.transparent;
           }),
         ),
         textTheme: const TextTheme(
