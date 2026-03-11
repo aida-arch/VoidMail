@@ -211,7 +211,7 @@ class _SearchViewState extends State<SearchView> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
 
           // AI Digest card
           VoidCard(
@@ -222,19 +222,20 @@ class _SearchViewState extends State<SearchView> {
                   children: [
                     const Icon(
                       Icons.auto_awesome,
-                      size: 16,
+                      size: 22,
                       color: VoidColors.accentSkyBlue,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'AI DIGEST',
                       style: Typo.metaLabel.copyWith(
+                        fontSize: 18,
                         color: VoidColors.accentSkyBlue,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
                 // Stats row
                 Row(
@@ -258,22 +259,6 @@ class _SearchViewState extends State<SearchView> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Digest text
-                if (_isLoadingDigest)
-                  Column(
-                    children: const [
-                      ShimmerLine(width: double.infinity, height: 14),
-                      SizedBox(height: 8),
-                      ShimmerLine(width: 200, height: 14),
-                    ],
-                  )
-                else if (_digestText != null)
-                  Text(
-                    _digestText!,
-                    style: Typo.subhead.copyWith(height: 1.5),
-                  ),
               ],
             ),
           ),
@@ -286,31 +271,26 @@ class _SearchViewState extends State<SearchView> {
 
   Widget _buildStatPill(String value, String label, Color color) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.w900,
+              color: VoidColors.textPrimary,
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: Typo.caption.copyWith(
-                color: color.withValues(alpha: 0.7),
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label.toUpperCase(),
+            style: Typo.mono.copyWith(
+              fontSize: 13,
+              color: VoidColors.textTertiary,
+              letterSpacing: 1,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
