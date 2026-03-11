@@ -1,0 +1,73 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+
+const authRoutes = require('./routes/auth');
+const gmailRoutes = require('./routes/gmail');
+const calendarRoutes = require('./routes/calendar');
+const helixRoutes = require('./routes/helix');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+// Routes
+app.use('/auth', authRoutes);
+app.use('/api/gmail', gmailRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/api/helix', helixRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+  const requiredEnvs = [
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'GOOGLE_PROJECT_ID',
+    'GOOGLE_REDIRECT_URI',
+    'GEMINI_API_KEY',
+    'IOS_REDIRECT_URI',
+  ];
+
+  const envStatus = {};
+  let allConfigured = true;
+
+  for (const key of requiredEnvs) {
+    const present = !!process.env[key];
+    envStatus[key] = present ? 'configured' : 'missing';
+    if (!present) allConfigured = false;
+  }
+
+  res.status(allConfigured ? 200 : 500).json({
+    status: allConfigured ? 'ok' : 'misconfigured',
+    service: 'VoidMail Backend',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    env: envStatus,
+  });
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error('[Error]', err.message);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+    code: err.code || 'UNKNOWN_ERROR'
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found', path: req.path });
+});
+
+// Export for Vercel serverless
+module.exports = app;
