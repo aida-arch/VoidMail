@@ -49,7 +49,7 @@ class _SettingsViewState extends State<SettingsView> {
             metaLabel: 'VOIDMAIL',
             title: 'SETTINGS',
             trailing: [
-              Text('BUILD: 1.1', style: Typo.metaLabel),
+              Text('BUILD: 1.1', style: Typo.metaLabel.copyWith(fontSize: 16)),
             ],
           ),
 
@@ -93,7 +93,7 @@ class _SettingsViewState extends State<SettingsView> {
             title: 'EMAIL SIGNATURES',
             children: [
               ToggleRow(
-                icon: Icons.draw,
+                icon: Icons.history_edu,
                 label: 'Enable Signatures',
                 value: _signatureEnabled,
                 onChanged: (v) => setState(() => _signatureEnabled = v),
@@ -376,25 +376,25 @@ class _SettingsViewState extends State<SettingsView> {
             child: Row(
               children: [
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: 10,
+                  height: 10,
                   decoration: BoxDecoration(
                     color: account.colorTag.color,
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     account.email,
-                    style: Typo.mono.copyWith(color: VoidColors.textSecondary),
+                    style: Typo.mono.copyWith(fontSize: 16, color: VoidColors.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Icon(
                   isEditing ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  size: 12,
+                  size: 16,
                   color: VoidColors.textTertiary,
                 ),
               ],
@@ -452,20 +452,15 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildAppearancePicker() {
     final themeNotifier = context.watch<ThemeModeNotifier>();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
         children: [
-          Row(
-            children: [
-              const Icon(Icons.dark_mode, size: 16, color: VoidColors.textSecondary),
-              const SizedBox(width: 14),
-              Text('Theme', style: Typo.body),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
+          const Icon(Icons.palette, size: 16, color: VoidColors.textSecondary),
+          const SizedBox(width: 12),
+          Text('Theme', style: Typo.body),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
             child: SegmentedButton<String>(
               showSelectedIcon: false,
               segments: const [
@@ -478,18 +473,18 @@ class _SettingsViewState extends State<SettingsView> {
               style: ButtonStyle(
                 backgroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return VoidColors.textPrimary;
+                    return Colors.white;
                   }
                   return VoidColors.bgDeep;
                 }),
                 foregroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return VoidColors.textInverse;
+                    return VoidColors.bgDeep;
                   }
-                  return VoidColors.textSecondary;
+                  return VoidColors.textTertiary;
                 }),
                 side: WidgetStateProperty.all(
-                  const BorderSide(color: VoidColors.border, width: 0.5),
+                  const BorderSide(color: Colors.transparent, width: 0),
                 ),
               ),
             ),

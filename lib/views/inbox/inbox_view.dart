@@ -133,13 +133,14 @@ class _InboxViewState extends State<InboxView> {
             children: [
               Text(
                 'VOIDMAIL',
-                style: Typo.metaLabel,
+                style: Typo.metaLabel.copyWith(fontSize: 16),
               ),
               const Spacer(),
               // Unread count with label
               Text(
                 '$unread UNREAD',
                 style: Typo.mono.copyWith(
+                  fontSize: 16,
                   color: unread > 0
                       ? VoidColors.accentYellow
                       : VoidColors.textTertiary,

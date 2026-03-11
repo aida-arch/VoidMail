@@ -26,7 +26,7 @@ class ScreenHeader extends StatelessWidget {
             children: [
               Text(
                 metaLabel.toUpperCase(),
-                style: Typo.metaLabel,
+                style: Typo.metaLabel.copyWith(fontSize: 16),
               ),
               const Spacer(),
               if (trailing != null) ...trailing!,
@@ -139,17 +139,18 @@ class SectionDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Text(
             label.toUpperCase(),
             style: Typo.sectionLabel,
           ),
-          const SizedBox(height: 8),
-          Container(
-            height: 0.5,
-            color: VoidColors.border,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 0.5,
+              color: VoidColors.border,
+            ),
           ),
         ],
       ),
@@ -479,10 +480,10 @@ class ToggleRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: VoidColors.textSecondary),
+          Icon(icon, size: 24, color: VoidColors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: Typo.body),
+            child: Text(label, style: Typo.body.copyWith(fontSize: 17)),
           ),
           Switch(
             value: value,

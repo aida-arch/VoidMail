@@ -116,7 +116,7 @@ class _SearchViewState extends State<SearchView> {
           trailing: [
             Text(
               '${gmail.emails.length} TOTAL',
-              style: Typo.metaLabel,
+              style: Typo.metaLabel.copyWith(fontSize: 16),
             ),
           ],
         ),
