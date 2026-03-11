@@ -310,6 +310,7 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return VoidCard(
+      color: const Color(0xFF1E1E1E),
       padding: const EdgeInsets.all(14),
       onTap: () {
         showModalBottomSheet(

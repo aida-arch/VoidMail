@@ -820,26 +820,25 @@ class _EmailDetailViewState extends State<EmailDetailView>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildActionButton(
-            Icons.shortcut,
+            Icons.reply,
             'Reply',
             VoidColors.accentSkyBlue,
             () => _openCompose(null, mode: ComposeMode.reply),
-            flipHorizontal: true,
           ),
           _buildActionButton(
-            Icons.reply_all_outlined,
+            Icons.reply_all,
             'Reply All',
             VoidColors.accentGreen,
             () => _openCompose(null, mode: ComposeMode.replyAll),
           ),
           _buildActionButton(
-            Icons.shortcut,
+            Icons.forward,
             'Forward',
             VoidColors.accentPink,
             () => _openCompose(null, mode: ComposeMode.forward),
           ),
           _buildActionButton(
-            widget.email.isStarred ? Icons.star : Icons.star_outline,
+            widget.email.isStarred ? Icons.star : Icons.star_border,
             'Star',
             VoidColors.textSecondary,
             () {
@@ -871,20 +870,13 @@ class _EmailDetailViewState extends State<EmailDetailView>
   }
 
   Widget _buildActionButton(
-      IconData icon, String label, Color color, VoidCallback onTap,
-      {bool flipHorizontal = false}) {
+      IconData icon, String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Transform(
-            alignment: Alignment.center,
-            transform: flipHorizontal
-                ? (Matrix4.identity()..setEntry(0, 0, -1.0))
-                : Matrix4.identity(),
-            child: Icon(icon, size: 24, color: color),
-          ),
+          Icon(icon, size: 20, color: color),
           const SizedBox(height: 4),
           Text(label, style: Typo.caption),
         ],

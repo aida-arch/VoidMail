@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../design_system/colors.dart';
@@ -23,6 +24,9 @@ class _InboxViewState extends State<InboxView> {
   String _selectedCategory = 'All';
   String? _selectedAccount;
   bool _showUnreadOnly = false;
+  bool _showReadOnly = false;
+  final GlobalKey _accountPillKey = GlobalKey();
+  final GlobalKey _filterPillKey = GlobalKey();
 
   final _categories = ['All', 'Priority', 'Updates', 'Newsletters'];
 
@@ -55,9 +59,11 @@ class _InboxViewState extends State<InboxView> {
           emails.where((e) => e.accountEmail == _selectedAccount).toList();
     }
 
-    // Filter by unread
+    // Filter by read status
     if (_showUnreadOnly) {
       emails = emails.where((e) => !e.isRead).toList();
+    } else if (_showReadOnly) {
+      emails = emails.where((e) => e.isRead).toList();
     }
 
     return emails;
@@ -204,17 +210,20 @@ class _InboxViewState extends State<InboxView> {
                 ),
                 const Spacer(),
                 // Account dropdown pill
-                _buildDropdownPill(
-                  label: _selectedAccount != null
-                      ? auth.accounts
-                          .firstWhere(
-                            (a) => a.email == _selectedAccount,
-                            orElse: () => auth.accounts.first,
-                          )
-                          .label
-                      : 'All',
-                  onTap: () => _showAccountPicker(auth),
-                  maxWidth: 80,
+                Builder(
+                  key: _accountPillKey,
+                  builder: (ctx) => _buildDropdownPill(
+                    label: _selectedAccount != null
+                        ? auth.accounts
+                            .firstWhere(
+                              (a) => a.email == _selectedAccount,
+                              orElse: () => auth.accounts.first,
+                            )
+                            .label
+                        : 'All',
+                    onTap: () => _showAccountPicker(auth),
+                    maxWidth: 80,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 // Read/Unread filter pill
@@ -268,44 +277,211 @@ class _InboxViewState extends State<InboxView> {
   }
 
   Widget _buildFilterPill() {
-    final isFiltered = _showUnreadOnly;
-    return GestureDetector(
-      onTap: () => setState(() => _showUnreadOnly = !_showUnreadOnly),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isFiltered
-              ? VoidColors.accentSkyBlue.withValues(alpha: 0.12)
-              : VoidColors.bgCardHover,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isFiltered ? Icons.mark_email_unread : Icons.email,
-              size: 11,
-              color: isFiltered
-                  ? VoidColors.accentSkyBlue
-                  : VoidColors.textTertiary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              isFiltered ? 'Unread' : 'Filter',
-              style: Typo.meta.copyWith(
-                letterSpacing: 0.5,
+    final isFiltered = _showUnreadOnly || _showReadOnly;
+    final label = _showUnreadOnly
+        ? 'Unread'
+        : _showReadOnly
+            ? 'Read'
+            : 'Filter';
+    return Builder(
+      key: _filterPillKey,
+      builder: (ctx) => GestureDetector(
+        onTap: () => _showFilterPicker(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: isFiltered
+                ? VoidColors.accentSkyBlue.withValues(alpha: 0.12)
+                : VoidColors.bgCardHover,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _showUnreadOnly
+                    ? Icons.mark_email_unread
+                    : _showReadOnly
+                        ? Icons.drafts
+                        : Icons.email,
+                size: 11,
                 color: isFiltered
                     ? VoidColors.accentSkyBlue
-                    : VoidColors.textPrimary,
+                    : VoidColors.textTertiary,
               ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: Typo.meta.copyWith(
+                  letterSpacing: 0.5,
+                  color: isFiltered
+                      ? VoidColors.accentSkyBlue
+                      : VoidColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: 14,
+                color: isFiltered
+                    ? VoidColors.accentSkyBlue
+                    : VoidColors.textTertiary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFilterPicker() {
+    final renderBox =
+        _filterPillKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+    final isFiltered = _showUnreadOnly || _showReadOnly;
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black38,
+        transitionDuration: const Duration(milliseconds: 260),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+
+          return FadeTransition(
+            opacity: curvedAnimation,
+            child: Stack(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox.expand(),
+                ),
+                Positioned(
+                  right: 20,
+                  top: position.dy + size.height + 8,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.85, end: 1.0)
+                        .animate(curvedAnimation),
+                    alignment: Alignment.topRight,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                          child: Container(
+                            width: 240,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1C1C1E)
+                                  .withValues(alpha: 0.78),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildFilterOption(
+                                  context: context,
+                                  icon: Icons.mark_email_unread_outlined,
+                                  label: 'Unread',
+                                  isSelected: _showUnreadOnly,
+                                  onTap: () {
+                                    setState(() {
+                                      _showUnreadOnly = true;
+                                      _showReadOnly = false;
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                _buildFilterOption(
+                                  context: context,
+                                  icon: Icons.drafts_outlined,
+                                  label: 'Read',
+                                  isSelected: _showReadOnly,
+                                  onTap: () {
+                                    setState(() {
+                                      _showReadOnly = true;
+                                      _showUnreadOnly = false;
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                if (isFiltered) ...[
+                                  Divider(
+                                    height: 0.5,
+                                    indent: 20,
+                                    endIndent: 20,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.15),
+                                  ),
+                                  _buildFilterOption(
+                                    context: context,
+                                    icon: Icons.cancel_outlined,
+                                    label: 'Clear Filter',
+                                    isSelected: false,
+                                    isDestructive: true,
+                                    onTap: () {
+                                      setState(() {
+                                        _showUnreadOnly = false;
+                                        _showReadOnly = false;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 14,
-              color: isFiltered
-                  ? VoidColors.accentSkyBlue
-                  : VoidColors.textTertiary,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterOption({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    final color = isDestructive
+        ? const Color(0xFFFF6B6B)
+        : isSelected
+            ? VoidColors.textPrimary
+            : VoidColors.textSecondary;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: 26, color: color),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: Typo.body.copyWith(color: color, fontSize: 18),
             ),
           ],
         ),
@@ -314,28 +490,146 @@ class _InboxViewState extends State<InboxView> {
   }
 
   void _showAccountPicker(AuthService auth) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: VoidColors.bgCard,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('All Accounts', style: Typo.body),
-              onTap: () {
-                setState(() => _selectedAccount = null);
-                Navigator.pop(context);
-              },
+    final renderBox =
+        _accountPillKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black38,
+        transitionDuration: const Duration(milliseconds: 260),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+
+          return FadeTransition(
+            opacity: curvedAnimation,
+            child: Stack(
+              children: [
+                // Dismiss on tap outside
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox.expand(),
+                ),
+                Positioned(
+                  left: 20,
+                  top: position.dy + size.height + 8,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.85, end: 1.0)
+                        .animate(curvedAnimation),
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                          child: Container(
+                            width: 280,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1C1C1E)
+                                  .withValues(alpha: 0.78),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildAccountOption(
+                                  context: context,
+                                  icon: Icons.all_inbox,
+                                  label: 'All Inboxes',
+                                  isSelected: _selectedAccount == null,
+                                  onTap: () {
+                                    setState(
+                                        () => _selectedAccount = null);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                Divider(
+                                  height: 0.5,
+                                  indent: 20,
+                                  endIndent: 20,
+                                  color: Colors.white
+                                      .withValues(alpha: 0.15),
+                                ),
+                                ...auth.accounts.map((account) {
+                                  final emailLabel = account.email
+                                      .replaceAll('@gmail.com', '');
+                                  return _buildAccountOption(
+                                    context: context,
+                                    icon: Icons.mail_outline,
+                                    label: emailLabel,
+                                    isSelected: _selectedAccount ==
+                                        account.email,
+                                    onTap: () {
+                                      setState(() => _selectedAccount =
+                                          account.email);
+                                      Navigator.pop(context);
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            ...auth.accounts.map((account) => ListTile(
-                  title: Text(account.label, style: Typo.body),
-                  subtitle: Text(account.email, style: Typo.monoSmall),
-                  onTap: () {
-                    setState(() => _selectedAccount = account.email);
-                    Navigator.pop(context);
-                  },
-                )),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAccountOption({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 26,
+              color: isSelected
+                  ? VoidColors.textPrimary
+                  : VoidColors.textSecondary,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: Typo.body.copyWith(
+                  color: isSelected
+                      ? VoidColors.textPrimary
+                      : VoidColors.textSecondary,
+                  fontSize: 18,
+                ),
+              ),
+            ),
           ],
         ),
       ),
