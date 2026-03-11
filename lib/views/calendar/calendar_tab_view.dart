@@ -76,6 +76,41 @@ class _CalendarTabViewState extends State<CalendarTabView> {
 
         const SizedBox(height: 16),
 
+        // Selected day divider
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 0.5,
+                color: VoidColors.border,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _isToday(_selectedDate)
+                    ? 'TODAY — ${DateFormat('EEE, MMM d').format(_selectedDate).toUpperCase()}'
+                    : DateFormat('EEE, MMM d').format(_selectedDate).toUpperCase(),
+                style: Typo.headline.copyWith(
+                  fontSize: 16,
+                  letterSpacing: 0.5,
+                  color: VoidColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${selectedDayEvents.length} EVENTS',
+                style: Typo.mono.copyWith(
+                  fontSize: 13,
+                  color: VoidColors.textTertiary,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+
         // Selected day events
         Expanded(
           child: selectedDayEvents.isEmpty
