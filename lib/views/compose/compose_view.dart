@@ -340,16 +340,16 @@ class _ComposeViewState extends State<ComposeView>
                       if (widget.mode == ComposeMode.reply || widget.mode == ComposeMode.replyAll)
                         const Padding(
                           padding: EdgeInsets.only(right: 10),
-                          child: Icon(Icons.reply, size: 24, color: VoidColors.accentSkyBlue),
+                          child: Icon(Icons.reply, size: 28, color: VoidColors.accentSkyBlue),
                         )
                       else if (widget.mode == ComposeMode.forward)
                         const Padding(
                           padding: EdgeInsets.only(right: 10),
-                          child: Icon(Icons.forward, size: 24, color: VoidColors.accentPink),
+                          child: Icon(Icons.forward, size: 28, color: VoidColors.accentPink),
                         ),
                       Text(
                         _headerTitle(),
-                        style: Typo.headline.copyWith(fontSize: 22, fontWeight: FontWeight.w900),
+                        style: Typo.headline.copyWith(fontSize: 26, fontWeight: FontWeight.w900),
                       ),
                     ],
                   ),
@@ -359,7 +359,7 @@ class _ComposeViewState extends State<ComposeView>
                       children: [
                         Container(
                           width: 3,
-                          height: 18,
+                          height: 22,
                           decoration: BoxDecoration(
                             color: VoidColors.accentSkyBlue,
                             borderRadius: BorderRadius.circular(2),
@@ -370,7 +370,7 @@ class _ComposeViewState extends State<ComposeView>
                           child: Text(
                             'Re: ${widget.replyTo!.subject}',
                             style: Typo.subhead.copyWith(
-                              fontSize: 14,
+                              fontSize: 18,
                               color: VoidColors.textTertiary,
                             ),
                             maxLines: 1,
@@ -384,29 +384,49 @@ class _ComposeViewState extends State<ComposeView>
               ),
             ),
 
-            const Divider(color: VoidColors.border, height: 0.5),
+            const SizedBox(height: 8),
 
             // Fields
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // From selector
-                    if (auth.accounts.length > 1) _buildFromSelector(auth),
+                    // Fields container with rounded corners
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: VoidColors.bgSurface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          // From selector
+                          if (auth.accounts.length > 1) ...[
+                            _buildFromSelector(auth),
+                            const Divider(color: VoidColors.border, height: 0.5, indent: 20, endIndent: 20),
+                          ],
 
-                    // To
-                    _buildField('TO', _toController),
+                          // To + CC/BCC inline
+                          _buildToFieldWithCcBcc(),
 
-                    // CC/BCC toggles
-                    if (!_showCc || !_showBcc) _buildCcBccToggle(),
+                          const Divider(color: VoidColors.border, height: 0.5, indent: 20, endIndent: 20),
 
-                    if (_showCc) _buildField('CC', _ccController),
-                    if (_showBcc) _buildField('BCC', _bccController),
+                          if (_showCc) ...[
+                            _buildField('CC', _ccController),
+                            const Divider(color: VoidColors.border, height: 0.5, indent: 20, endIndent: 20),
+                          ],
+                          if (_showBcc) ...[
+                            _buildField('BCC', _bccController),
+                            const Divider(color: VoidColors.border, height: 0.5, indent: 20, endIndent: 20),
+                          ],
 
-                    // Subject
-                    _buildField('SUBJECT', _subjectController),
+                          // Subject
+                          _buildField('SUBJ', _subjectController),
+                        ],
+                      ),
+                    ),
 
-                    const Divider(color: VoidColors.border, height: 0.5),
+                    const SizedBox(height: 8),
 
                     // Attached files
                     if (_attachedFiles.isNotEmpty) _buildAttachmentChips(),
@@ -470,8 +490,8 @@ class _ComposeViewState extends State<ComposeView>
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: VoidColors.bgCard,
                 shape: BoxShape.circle,
@@ -481,7 +501,7 @@ class _ComposeViewState extends State<ComposeView>
                 ),
               ),
               child: const Center(
-                child: Icon(Icons.close, size: 18, color: VoidColors.textSecondary),
+                child: Icon(Icons.close, size: 22, color: VoidColors.textSecondary),
               ),
             ),
           ),
@@ -581,18 +601,18 @@ class _ComposeViewState extends State<ComposeView>
         children: [
           SizedBox(
             width: 60,
-            child: Text(label, style: Typo.metaLabel.copyWith(fontSize: 11)),
+            child: Text(label, style: Typo.metaLabel.copyWith(fontSize: 15)),
           ),
           Expanded(
             child: TextField(
               controller: controller,
-              style: Typo.body.copyWith(fontSize: 15),
+              style: Typo.body.copyWith(fontSize: 19),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 hintStyle: Typo.body.copyWith(
-                  fontSize: 15,
+                  fontSize: 19,
                   color: VoidColors.textTertiary,
                 ),
               ),
@@ -603,33 +623,65 @@ class _ComposeViewState extends State<ComposeView>
     );
   }
 
-  Widget _buildCcBccToggle() {
+  Widget _buildToFieldWithCcBcc() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(80, 0, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (!_showCc)
-            GestureDetector(
-              onTap: () => setState(() => _showCc = true),
-              child: Text(
-                'CC',
-                style: Typo.subhead.copyWith(
-                  fontSize: 13,
-                  color: VoidColors.accentSkyBlue,
+          SizedBox(
+            width: 60,
+            child: Text('TO', style: Typo.metaLabel.copyWith(fontSize: 15)),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _toController,
+              style: Typo.body.copyWith(fontSize: 19),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                hintStyle: Typo.body.copyWith(
+                  fontSize: 19,
+                  color: VoidColors.textTertiary,
                 ),
               ),
             ),
-          if (!_showCc && !_showBcc) const SizedBox(width: 16),
-          if (!_showBcc)
-            GestureDetector(
-              onTap: () => setState(() => _showBcc = true),
-              child: Text(
-                'BCC',
-                style: Typo.subhead.copyWith(
-                  fontSize: 13,
-                  color: VoidColors.accentSkyBlue,
-                ),
-              ),
+          ),
+          if (!_showCc || !_showBcc)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!_showCc)
+                  GestureDetector(
+                    onTap: () => setState(() => _showCc = true),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: Text(
+                        'CC',
+                        style: Typo.metaLabel.copyWith(
+                          fontSize: 17,
+                          color: VoidColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (!_showCc && !_showBcc) const SizedBox(width: 8),
+                if (!_showBcc)
+                  GestureDetector(
+                    onTap: () => setState(() => _showBcc = true),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: Text(
+                        'BCC',
+                        style: Typo.metaLabel.copyWith(
+                          fontSize: 17,
+                          color: VoidColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
         ],
       ),
@@ -832,12 +884,12 @@ class _ComposeViewState extends State<ComposeView>
 
   Widget _buildToolbar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 70),
       decoration: const BoxDecoration(
         color: VoidColors.bgDeep,
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: VoidColors.bgCard,
           borderRadius: BorderRadius.circular(32),
@@ -945,15 +997,15 @@ class _ComposeViewState extends State<ComposeView>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: color != VoidColors.textTertiary
               ? color.withValues(alpha: 0.12)
               : Colors.transparent,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: color),
+        child: Icon(icon, size: 22, color: color),
       ),
     );
   }
