@@ -329,6 +329,61 @@ class _ComposeViewState extends State<ComposeView>
             // Header
             _buildHeader(),
 
+            // Title label with icon and subject
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (widget.mode == ComposeMode.reply || widget.mode == ComposeMode.replyAll)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 10),
+                          child: Icon(Icons.reply, size: 24, color: VoidColors.accentSkyBlue),
+                        )
+                      else if (widget.mode == ComposeMode.forward)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 10),
+                          child: Icon(Icons.forward, size: 24, color: VoidColors.accentPink),
+                        ),
+                      Text(
+                        _headerTitle(),
+                        style: Typo.headline.copyWith(fontSize: 22, fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
+                  if (widget.replyTo != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: VoidColors.accentSkyBlue,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Re: ${widget.replyTo!.subject}',
+                            style: Typo.subhead.copyWith(
+                              fontSize: 14,
+                              color: VoidColors.textTertiary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
             const Divider(color: VoidColors.border, height: 0.5),
 
             // Fields
@@ -393,32 +448,91 @@ class _ComposeViewState extends State<ComposeView>
     );
   }
 
-  Widget _buildHeader() {
-    String title;
+  String _headerTitle() {
     switch (widget.mode) {
       case ComposeMode.compose:
-        title = 'NEW MESSAGE';
-        break;
+        return 'NEW MESSAGE';
       case ComposeMode.reply:
-        title = 'REPLY';
-        break;
+        return 'REPLY';
       case ComposeMode.replyAll:
-        title = 'REPLY ALL';
-        break;
+        return 'REPLY ALL';
       case ComposeMode.forward:
-        title = 'FORWARD';
-        break;
+        return 'FORWARD';
     }
+  }
 
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Row(
         children: [
-          Text(title, style: Typo.metaLabel),
+          // Close button (left)
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: VoidColors.bgCard,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: VoidColors.border,
+                  width: 1,
+                ),
+              ),
+              child: const Center(
+                child: Icon(Icons.close, size: 18, color: VoidColors.textSecondary),
+              ),
+            ),
+          ),
           const Spacer(),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: VoidColors.textTertiary),
+          // Send button (right)
+          GestureDetector(
+            onTap: _isSending ? null : _send,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: _toController.text.isNotEmpty
+                    ? VoidColors.accentPink
+                    : VoidColors.bgCardHover,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: _isSending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: VoidColors.textInverse,
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _showSchedule ? Icons.schedule_send : Icons.send,
+                          size: 16,
+                          color: _toController.text.isNotEmpty
+                              ? VoidColors.textInverse
+                              : VoidColors.textTertiary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _showSchedule ? 'SCHEDULE' : 'SEND',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace',
+                            letterSpacing: 1.5,
+                            color: _toController.text.isNotEmpty
+                                ? VoidColors.textInverse
+                                : VoidColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ],
       ),
@@ -493,7 +607,6 @@ class _ComposeViewState extends State<ComposeView>
     return Padding(
       padding: const EdgeInsets.fromLTRB(80, 0, 20, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           if (!_showCc)
             GestureDetector(
@@ -818,57 +931,6 @@ class _ComposeViewState extends State<ComposeView>
                   setState(() => _showSchedule = !_showSchedule),
             ),
 
-            const SizedBox(width: 4),
-
-            // Send button
-            GestureDetector(
-              onTap: _isSending ? null : _send,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _toController.text.isNotEmpty
-                      ? VoidColors.accentPink
-                      : VoidColors.bgCardHover,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: _isSending
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: VoidColors.textInverse,
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _showSchedule ? Icons.schedule_send : Icons.send,
-                            size: 13,
-                            color: _toController.text.isNotEmpty
-                                ? VoidColors.textInverse
-                                : VoidColors.textTertiary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _showSchedule ? 'SCHEDULE' : 'SEND',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'monospace',
-                              letterSpacing: 1.5,
-                              color: _toController.text.isNotEmpty
-                                  ? VoidColors.textInverse
-                                  : VoidColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
           ],
         ),
       ),
